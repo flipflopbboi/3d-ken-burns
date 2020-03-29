@@ -70,6 +70,12 @@ def parse_args():
 	"-s", "--shift", type=float, required=False, default=100, help="Shift level (default=100)"
 	)
 	parser.add_argument(
+	"-start", "--start", type=float, required=False, default=0, help="Point of animation start (default=0.0)"
+	)
+	parser.add_argument(
+	"-stop", "--stop", type=float, required=False, default=1.0, help="Point of animation stop (default=1.0)"
+	)
+	parser.add_argument(
 	"-w", "--width", type=int, required=False, default=None, help="Zoom target pixel width (default is middle)"
 	)
 	parser.add_argument(
@@ -109,7 +115,7 @@ if __name__ == '__main__':
 	})
 
 	npyResult = process_kenburns({
-		'fltSteps': numpy.linspace(0.0, 10, 750).tolist(),
+		'fltSteps': numpy.linspace(start=args.start, stop=args,stop, num=75).tolist(),
 		'objFrom': objFrom,
 		'objTo': objTo,
 		'boolInpaint': True
