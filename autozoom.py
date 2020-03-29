@@ -216,6 +216,11 @@ if __name__ == "__main__":
         # Append to full list
         all_frames.extend(frame_list)
 
+    max_width = max(frame.size[0] for frame in all_frames)
+    print(f"📐 max width: {max_width}")
+    max_height = max(frame.size[1] for frame in all_frames)
+    print(f"📐 max height: {max_height}")
+
     # Create output video
     moviepy.editor.ImageSequenceClip(
         sequence=[npyFrame[:, :, ::-1] for npyFrame in all_frames], fps=FPS
