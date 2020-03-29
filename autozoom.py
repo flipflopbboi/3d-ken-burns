@@ -121,7 +121,7 @@ if __name__ == '__main__':
 
 	npyResult = process_kenburns({
 		# num defines the number of discrete steps for the inwards transition
-		'fltSteps': numpy.linspace(start=args.start, stop=args.stop, num=args.time*FPS.tolist(),
+		'fltSteps': numpy.linspace(start=args.start, stop=args.stop, num=int(args.time*FPS)).tolist(),
 		'objFrom': objFrom,
 		'objTo': objTo,
 		'boolInpaint': True
