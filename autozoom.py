@@ -226,9 +226,12 @@ if __name__ == "__main__":
     print(f"📐 Max height: {max_height}")
 
     #
+    print("Resizing all images.. ", end="")
     for frame in frames_list:
         frame = cv2.resize(frame, dsize=(max_width, max_height), interpolation=cv2.INTER_CUBIC)
-
+    print("DONE ✅")
+    for frame in frames_list:
+        print(frame.shape)
     # Create output video
     moviepy.editor.ImageSequenceClip(
         sequence=frames_list, fps=FPS
