@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     all_frames: List = []
 
-    if args.folder:
+    if not args.folder:
         img_list = [args.input]
     else:
         img_list: List[str] = [img for img in os.listdir(args.folder)]
