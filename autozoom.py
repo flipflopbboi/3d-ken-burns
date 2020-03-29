@@ -150,7 +150,7 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    all_frames: List[int, int, int] = []
+    all_frames = []
 
     if not args.folder:
         img_list = [args.input]
