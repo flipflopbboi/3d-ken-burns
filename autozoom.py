@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import argparse
+from typing import List, Dict
+
 import torch
 import torchvision
 
@@ -67,10 +69,13 @@ FPS = 25
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-i", "--input", type=str, required=True, help="Input file path"
+        "-i", "--input", type=str, required=False, help="Input file path"
     )
     parser.add_argument(
-        "-o", "--output", type=str, required=True, help="Output file path"
+        "-o", "--output", type=str, required=False, help="Output file path"
+    )
+    parser.add_argument(
+        "-folder", "--folder", type=str, required=False, help="Input folder"
     )
     parser.add_argument(
         "-z",
@@ -143,54 +148,70 @@ def parse_args():
 
 if __name__ == "__main__":
     args = parse_args()
-    npyImage = cv2.imread(filename=args.input, flags=cv2.IMREAD_COLOR)
 
-    intWidth = npyImage.shape[1]
-    intHeight = npyImage.shape[0]
+    all_frames: List = []
 
-    fltRatio = float(intWidth) / float(intHeight)
+    if args.folder:
+        img_list = [args.input]
+    else:
+        img_list: List[str] = [img for img in os.listdir(args.folder)]
 
-    intWidth = min(int(1024 * fltRatio), 1024)
-    intHeight = min(int(1024 / fltRatio), 1024)
+    print(f"Will process {len(img_list)} image(s)")
 
-    npyImage = cv2.resize(
-        src=npyImage,
-        dsize=(intWidth, intHeight),
-        fx=0.0,
-        fy=0.0,
-        interpolation=cv2.INTER_AREA,
-    )
+    for input_image in img_list:
+        npyImage = cv2.imread(filename=input_image, flags=cv2.IMREAD_COLOR)
 
-    process_load(npyImage, {})
+        intWidth = npyImage.shape[1]
+        intHeight = npyImage.shape[0]
 
-    objFrom = {
-        "fltCenterU": args.width if args.width else intWidth / 2.0,
-        "fltCenterV": args.height if args.height else intHeight / 2.0,
-        "intCropWidth": int(math.floor(0.97 * intWidth)),
-        "intCropHeight": int(math.floor(0.97 * intHeight)),
-    }
+        fltRatio = float(intWidth) / float(intHeight)
 
-    objTo = process_autozoom(
-        {"fltShift": args.shift, "fltZoom": args.zoom, "objFrom": objFrom}
-    )
+        intWidth = min(int(1024 * fltRatio), 1024)
+        intHeight = min(int(1024 / fltRatio), 1024)
 
-    npyResult = process_kenburns(
-        {
-            # num defines the number of discrete steps for the inwards transition
-            "fltSteps": numpy.linspace(
-                start=args.start, stop=args.stop, num=int(args.time * FPS)
-            ).tolist(),
-            "objFrom": objFrom,
-            "objTo": objTo,
-            "boolInpaint": True,
+        npyImage = cv2.resize(
+            src=npyImage,
+            dsize=(intWidth, intHeight),
+            fx=0.0,
+            fy=0.0,
+            interpolation=cv2.INTER_AREA,
+        )
+
+        process_load(npyImage, {})
+
+        objFrom = {
+            "fltCenterU": args.width if args.width else intWidth / 2.0,
+            "fltCenterV": args.height if args.height else intHeight / 2.0,
+            "intCropWidth": int(math.floor(0.97 * intWidth)),
+            "intCropHeight": int(math.floor(0.97 * intHeight)),
         }
-    )
+
+        objTo = process_autozoom(
+            {"fltShift": args.shift, "fltZoom": args.zoom, "objFrom": objFrom}
+        )
+
+        npyResult = process_kenburns(
+            {
+                # num defines the number of discrete steps for the inwards transition
+                "fltSteps": numpy.linspace(
+                    start=args.start, stop=args.stop, num=int(args.time * FPS)
+                ).tolist(),
+                "objFrom": objFrom,
+                "objTo": objTo,
+                "boolInpaint": True,
+            }
+        )
+
+        # Add reversal
+        if args.reverse:
+            frame_list = npyResult + list(reversed(npyResult))[1:]
+        else:
+            frame_list = npyResult
+
+        # Append to full list
+        all_frames.append(frame_list)
 
     # Create output video
-    if args.reverse:
-        frame_list = npyResult + list(reversed(npyResult))[1:]
-    else:
-        frame_list = npyResult
     moviepy.editor.ImageSequenceClip(
-        sequence=[npyFrame[:, :, ::-1] for npyFrame in frame_list], fps=FPS
+        sequence=[npyFrame[:, :, ::-1] for npyFrame in all_frames], fps=FPS
     ).write_videofile(args.output)
