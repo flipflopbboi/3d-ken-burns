@@ -128,6 +128,14 @@ def parse_args():
         default=None,
         help="Zoom target pixel height (default is middle)",
     )
+    parser.add_argument(
+        "-reverse",
+        "--reverse",
+        required=False,
+        default=False,
+        action='store_true',
+        help="Include reverse motion?",
+    )
     return parser.parse_args()
 
 
@@ -178,10 +186,15 @@ if __name__ == "__main__":
         }
     )
 
+    # Create output video
+    if args.reverse:
+        frame_list = npyResult + list(reversed(npyResult))[1:]
+    else:
+        frame_list = npyResult
     moviepy.editor.ImageSequenceClip(
         sequence=[
             npyFrame[:, :, ::-1]
-            for npyFrame in npyResult + list(reversed(npyResult))[1:]
+            for npyFrame in npyResult + frame_list
         ],
         fps=FPS,
     ).write_videofile(args.output)
