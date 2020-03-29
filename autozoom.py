@@ -5,7 +5,7 @@ from typing import List, Dict
 
 import torch
 import torchvision
-
+from imageio import imread
 import base64
 import cupy
 import cv2
@@ -218,7 +218,7 @@ if __name__ == "__main__":
 
     frames_list = [npyFrame[:, :, ::-1] for npyFrame in all_frames]
     print(len(frames_list))
-    print(f"size: {cv2.imread(frames_list[0]).size}")
+    print(f"size: {imread(frames_list[0]).size}")
     max_width = max(frame.size[0] for frame in frames_list)
     print(f"📐 max width: {max_width}")
     max_height = max(frame.size[1] for frame in frames_list)
