@@ -150,7 +150,7 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
 
-    all_frames: List = []
+    all_frames: List[int, int, int] = []
 
     if not args.folder:
         img_list = [args.input]
@@ -216,12 +216,14 @@ if __name__ == "__main__":
         # Append to full list
         all_frames.extend(frame_list)
 
-    max_width = max(frame.size[0] for frame in all_frames)
+    frames_list = [npyFrame[:, :, ::-1] for npyFrame in all_frames]
+
+    max_width = max(frame.size[0] for frame in frames_list)
     print(f"📐 max width: {max_width}")
-    max_height = max(frame.size[1] for frame in all_frames)
+    max_height = max(frame.size[1] for frame in frames_list)
     print(f"📐 max height: {max_height}")
 
     # Create output video
     moviepy.editor.ImageSequenceClip(
-        sequence=[npyFrame[:, :, ::-1] for npyFrame in all_frames], fps=FPS
+        sequence=[frame for frame in frames_list], fps=FPS
     ).write_videofile(args.output)
