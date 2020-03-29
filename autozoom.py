@@ -206,7 +206,6 @@ if __name__ == "__main__":
                 "boolInpaint": True,
             }
         )
-        print(f"type: {type(npyResult)}")
 
         # Add reversal
         if args.reverse:
@@ -218,8 +217,8 @@ if __name__ == "__main__":
         all_frames.extend(frame_list)
 
     frames_list = [npyFrame[:, :, ::-1] for npyFrame in all_frames]
-    print(frames_list[0])
-    print(f"size: {frames_list[0].size}")
+    print(len(frames_list))
+    print(f"size: {cv2.imread(frames_list[0]).size}")
     max_width = max(frame.size[0] for frame in frames_list)
     print(f"📐 max width: {max_width}")
     max_height = max(frame.size[1] for frame in frames_list)
