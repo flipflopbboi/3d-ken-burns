@@ -155,7 +155,9 @@ if __name__ == "__main__":
     if not args.folder:
         img_list = [args.input]
     else:
-        img_list: List[str] = [str(img) for img in pathlib.Path(args.folder).glob('**/*')]
+        img_list: List[str] = [
+            str(img) for img in pathlib.Path(args.folder).glob("**/*")
+        ]
 
     print(f"Will process {len(img_list)} image(s)")
 
@@ -220,19 +222,32 @@ if __name__ == "__main__":
     frames_list = [npyFrame[:, :, ::-1] for npyFrame in all_frames]
 
     print(f"🎞 Frames #  : {len(frames_list)}")
-    max_width = max(frame.shape[0] for frame in frames_list)
-    print(f"📐 Max width : {max_width}")
-    max_height = max(frame.shape[1] for frame in frames_list)
-    print(f"📐 Max height: {max_height}")
+    max_height = max(frame.shape[0] for frame in frames_list)
+    print(f"📐 Max height : {max_height}")
+    max_width = max(frame.shape[1] for frame in frames_list)
+    print(f"📐 Max width: {max_width}")
 
     #
-    print("Resizing all images.. ", end="")
+    print("Making all images same size ... ", end="")
     for frame in frames_list:
-        frame = cv2.resize(frame, dsize=(max_width, max_height), interpolation=cv2.INTER_CUBIC)
+        frame_height, frame_width = frame.shape
+        top = (max_height - frame_height) / 2
+        bottom = (max_height - frame_height) / 2
+        left = (max_width - frame_width) / 2
+        right = (max_width - frame_width) / 2
+        frame = cv2.copyMakeBorder(
+            frame,
+            top=top,
+            bottom=bottom,
+            left=left,
+            right=right,
+            borderType=cv2.BORDER_CONSTANT,
+            value=[0, 0, 0],
+        )
     print("DONE ✅")
     for frame in frames_list:
         print(frame.shape)
     # Create output video
-    moviepy.editor.ImageSequenceClip(
-        sequence=frames_list, fps=FPS
-    ).write_videofile(args.output)
+    moviepy.editor.ImageSequenceClip(sequence=frames_list, fps=FPS).write_videofile(
+        args.output
+    )
