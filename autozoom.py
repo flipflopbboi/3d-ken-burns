@@ -53,6 +53,8 @@ exec(open('./models/pointcloud-inpainting.py', 'r').read())
 arguments_strIn = './images/doublestrike.jpg'
 arguments_strOut = './autozoom.mp4'
 
+FPS = 25
+
 ##########################################################
 
 def parse_args():
@@ -76,10 +78,13 @@ def parse_args():
 	"-stop", "--stop", type=float, required=False, default=1.0, help="Point of animation stop (default=1.0)"
 	)
 	parser.add_argument(
-	"-w", "--width", type=int, required=False, default=None, help="Zoom target pixel width (default is middle)"
+	"-time", "--time", type=float, required=False, default=3.0, help="Time (in secs) for transition (total will be double)"
 	)
 	parser.add_argument(
-	"-e", "--height", type=int, required=False, default=None, help="Zoom target pixel height (default is middle)"
+	"-width", "--width", type=int, required=False, default=None, help="Zoom target pixel width (default is middle)"
+	)
+	parser.add_argument(
+	"-height", "--height", type=int, required=False, default=None, help="Zoom target pixel height (default is middle)"
 	)
 	return parser.parse_args()
 
@@ -115,10 +120,11 @@ if __name__ == '__main__':
 	})
 
 	npyResult = process_kenburns({
-		'fltSteps': numpy.linspace(start=args.start, stop=args.stop, num=75).tolist(),
+		# num defines the number of discrete steps for the inwards transition
+		'fltSteps': numpy.linspace(start=args.start, stop=args.stop, num=args.time*FPS.tolist(),
 		'objFrom': objFrom,
 		'objTo': objTo,
 		'boolInpaint': True
 	})
 
-	moviepy.editor.ImageSequenceClip(sequence=[ npyFrame[:, :, ::-1] for npyFrame in npyResult + list(reversed(npyResult))[1:] ], fps=25).write_videofile(args.output)
+	moviepy.editor.ImageSequenceClip(sequence=[ npyFrame[:, :, ::-1] for npyFrame in npyResult + list(reversed(npyResult))[1:] ], fps=FPS).write_videofile(args.output)
