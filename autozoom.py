@@ -214,7 +214,7 @@ if __name__ == "__main__":
             frame_list = npyResult
 
         # Append to full list
-        all_frames.append(frame_list)
+        all_frames.extend(frame_list)
 
     # Create output video
     moviepy.editor.ImageSequenceClip(
