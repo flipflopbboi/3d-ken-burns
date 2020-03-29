@@ -64,10 +64,10 @@ def parse_args():
 	"-o", "--output", required=True, help="Output file path"
 	)
 	parser.add_argument(
-	"-z", "--zoom", required=False, default=10, help="Zoom level (default=10)"
+	"-z", "--zoom", required=False, default=1.25, help="Zoom level (default=1.25)"
 	)
 	parser.add_argument(
-	"-s", "--shift", required=False, default=1.25, help="Shift level (default=1.25)"
+	"-s", "--shift", required=False, default=100, help="Shift level (default=100)"
 	)
 	parser.add_argument(
 	"-w", "--width", required=False, default=None, help="Zoom target pixel width (default is middle)"
