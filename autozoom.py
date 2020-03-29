@@ -133,7 +133,7 @@ def parse_args():
         "--reverse",
         required=False,
         default=False,
-        action='store_true',
+        action="store_true",
         help="Include reverse motion?",
     )
     return parser.parse_args()
@@ -192,9 +192,5 @@ if __name__ == "__main__":
     else:
         frame_list = npyResult
     moviepy.editor.ImageSequenceClip(
-        sequence=[
-            npyFrame[:, :, ::-1]
-            for npyFrame in npyResult + frame_list
-        ],
-        fps=FPS,
+        sequence=[npyFrame[:, :, ::-1] for npyFrame in npyResult + frame_list], fps=FPS
     ).write_videofile(args.output)
