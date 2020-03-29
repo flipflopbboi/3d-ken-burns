@@ -58,22 +58,22 @@ arguments_strOut = './autozoom.mp4'
 def parse_args():
 	parser = argparse.ArgumentParser()
 	parser.add_argument(
-	"-i", "--input", required=True, help="Input file path"
+	"-i", "--input", type=str, required=True, help="Input file path"
 	)
 	parser.add_argument(
-	"-o", "--output", required=True, help="Output file path"
+	"-o", "--output", type=str, required=True, help="Output file path"
 	)
 	parser.add_argument(
-	"-z", "--zoom", required=False, default=1.25, help="Zoom level (default=1.25)"
+	"-z", "--zoom", type=float, required=False, default=1.25, help="Zoom level (default=1.25)"
 	)
 	parser.add_argument(
-	"-s", "--shift", required=False, default=100, help="Shift level (default=100)"
+	"-s", "--shift", type=float, required=False, default=100, help="Shift level (default=100)"
 	)
 	parser.add_argument(
-	"-w", "--width", required=False, default=None, help="Zoom target pixel width (default is middle)"
+	"-w", "--width", type=int, required=False, default=None, help="Zoom target pixel width (default is middle)"
 	)
 	parser.add_argument(
-	"-e", "--height", required=False, default=None, help="Zoom target pixel height (default is middle)"
+	"-e", "--height", type=int, required=False, default=None, help="Zoom target pixel height (default is middle)"
 	)
 	return parser.parse_args()
 
