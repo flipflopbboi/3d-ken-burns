@@ -155,7 +155,7 @@ if __name__ == "__main__":
     if not args.folder:
         img_list = [args.input]
     else:
-        img_list: List[str] = [str(img) for img in pathlib.Path(args.folders).glob('**/*')]
+        img_list: List[str] = [str(img) for img in pathlib.Path(args.folder).glob('**/*')]
 
     print(f"Will process {len(img_list)} image(s)")
 
