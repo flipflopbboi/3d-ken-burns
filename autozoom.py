@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import argparse
 import torch
 import torchvision
 
@@ -53,15 +53,35 @@ exec(open('./models/pointcloud-inpainting.py', 'r').read())
 arguments_strIn = './images/doublestrike.jpg'
 arguments_strOut = './autozoom.mp4'
 
-for strOption, strArgument in getopt.getopt(sys.argv[1:], '', [ strParameter[2:] + '=' for strParameter in sys.argv[1::2] ])[0]:
-	if strOption == '--in' and strArgument != '': arguments_strIn = strArgument # path to the input image
-	if strOption == '--out' and strArgument != '': arguments_strOut = strArgument # path to where the output should be stored
-# end
+##########################################################
+
+def parse_args():
+	parser = argparse.ArgumentParser()
+	parser.add_argument(
+	"-i", "--input", required=True, help="Input file path"
+	)
+	parser.add_argument(
+	"-o", "--output", required=True, help="Output file path"
+	)
+	parser.add_argument(
+	"-z", "--zoom", required=False, default=10, help="Zoom level (default=10)"
+	)
+	parser.add_argument(
+	"-s", "--shift", required=False, default=1.25, help="Shift level (default=1.25)"
+	)
+	parser.add_argument(
+	"-w", "--width", required=False, default=None, help="Zoom target pixel width (default is middle)"
+	)
+	parser.add_argument(
+	"-w", "--height", required=False, default=None, help="Zoom target pixel height (default is middle)"
+	)
+	return parser.parse_args()
 
 ##########################################################
 
 if __name__ == '__main__':
-	npyImage = cv2.imread(filename=arguments_strIn, flags=cv2.IMREAD_COLOR)
+	args = parse_args()
+	npyImage = cv2.imread(filename=args.input, flags=cv2.IMREAD_COLOR)
 
 	intWidth = npyImage.shape[1]
 	intHeight = npyImage.shape[0]
@@ -75,16 +95,16 @@ if __name__ == '__main__':
 
 	process_load(npyImage, {})
 
-	objFrom = {
-		'fltCenterU': intWidth / 2.0,
-		'fltCenterV': intHeight / 2.0,
+	objFrom = {	
+		'fltCenterU': args.width if args.width else intWidth / 2.0,
+		'fltCenterV': args.height if args.height else intHeight / 2.0,
 		'intCropWidth': int(math.floor(0.97 * intWidth)),
 		'intCropHeight': int(math.floor(0.97 * intHeight))
 	}
 
 	objTo = process_autozoom({
-		'fltShift': 100.0,
-		'fltZoom': 1.25,
+		'fltShift': args.shift,
+		'fltZoom': args.zoom,
 		'objFrom': objFrom
 	})
 
@@ -95,5 +115,4 @@ if __name__ == '__main__':
 		'boolInpaint': True
 	})
 
-	moviepy.editor.ImageSequenceClip(sequence=[ npyFrame[:, :, ::-1] for npyFrame in npyResult + list(reversed(npyResult))[1:] ], fps=25).write_videofile(arguments_strOut)
-# end
+	moviepy.editor.ImageSequenceClip(sequence=[ npyFrame[:, :, ::-1] for npyFrame in npyResult + list(reversed(npyResult))[1:] ], fps=25).write_videofile(args.output)
