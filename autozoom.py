@@ -73,7 +73,7 @@ def parse_args():
 	"-w", "--width", required=False, default=None, help="Zoom target pixel width (default is middle)"
 	)
 	parser.add_argument(
-	"-h", "--height", required=False, default=None, help="Zoom target pixel height (default is middle)"
+	"-e", "--height", required=False, default=None, help="Zoom target pixel height (default is middle)"
 	)
 	return parser.parse_args()
 
