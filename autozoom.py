@@ -159,6 +159,10 @@ if __name__ == "__main__":
     print(f"Will process {len(img_list)} image(s)")
 
     for input_image in img_list:
+        if not os.path.isfile(input_image):
+            print(f"🔴 Invalid image: {input_image}")
+            exit()
+        print(f"✅ Valid image: {input_image}")
         npyImage = cv2.imread(filename=input_image, flags=cv2.IMREAD_COLOR)
 
         intWidth = npyImage.shape[1]
