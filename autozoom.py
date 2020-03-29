@@ -216,13 +216,18 @@ if __name__ == "__main__":
         # Append to full list
         all_frames.extend(frame_list)
 
+    # Split tensor lists in a list of frames
     frames_list = [npyFrame[:, :, ::-1] for npyFrame in all_frames]
-    print(len(frames_list))
-    print(f"shape: {frames_list[0].shape}")
+
+    print(f"🎞 Frames #  : {len(frames_list)}")
     max_width = max(frame.shape[0] for frame in frames_list)
-    print(f"📐 max width: {max_width}")
+    print(f"📐 Max width : {max_width}")
     max_height = max(frame.shape[1] for frame in frames_list)
-    print(f"📐 max height: {max_height}")
+    print(f"📐 Max height: {max_height}")
+
+    #
+    for frame in frames_list:
+        frame = cv2.resize(frame, dsize=(max_width, max_height), interpolation=cv2.INTER_CUBIC)
 
     # Create output video
     moviepy.editor.ImageSequenceClip(
