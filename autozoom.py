@@ -192,5 +192,5 @@ if __name__ == "__main__":
     else:
         frame_list = npyResult
     moviepy.editor.ImageSequenceClip(
-        sequence=[npyFrame[:, :, ::-1] for npyFrame in npyResult + frame_list], fps=FPS
+        sequence=[npyFrame[:, :, ::-1] for npyFrame in frame_list], fps=FPS
     ).write_videofile(args.output)
