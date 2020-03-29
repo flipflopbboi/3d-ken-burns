@@ -218,13 +218,13 @@ if __name__ == "__main__":
 
     frames_list = [npyFrame[:, :, ::-1] for npyFrame in all_frames]
     print(len(frames_list))
-    print(f"size: {imread(frames_list[0]).size}")
-    max_width = max(frame.size[0] for frame in frames_list)
+    print(f"shape: {frames_list[0].shape}")
+    max_width = max(frame.shape[0] for frame in frames_list)
     print(f"📐 max width: {max_width}")
-    max_height = max(frame.size[1] for frame in frames_list)
+    max_height = max(frame.shape[1] for frame in frames_list)
     print(f"📐 max height: {max_height}")
 
     # Create output video
     moviepy.editor.ImageSequenceClip(
-        sequence=[frame for frame in frames_list], fps=FPS
+        sequence=frames_list, fps=FPS
     ).write_videofile(args.output)
