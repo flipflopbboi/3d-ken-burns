@@ -222,11 +222,11 @@ if __name__ == "__main__":
     # Split tensor lists in a list of frames
     frames_list = [npyFrame[:, :, ::-1] for npyFrame in all_frames]
 
-    print(f"🎞 Frames #  : {len(frames_list)}")
+    print(f"🎞 Frames #   : {len(frames_list)}")
     max_height = max(frame.shape[0] for frame in frames_list)
     print(f"📐 Max height : {max_height}")
     max_width = max(frame.shape[1] for frame in frames_list)
-    print(f"📐 Max width: {max_width}")
+    print(f"📐 Max width  : {max_width}")
 
     # Add border to make all images the same size
     print("🖼 Making all images same size ... ", end="")
