@@ -33,7 +33,6 @@ import urllib
 import zipfile
 
 ##########################################################
-from common import process_autozoom, process_kenburns
 from helpers.numeric import split_int_in_half
 
 assert (
