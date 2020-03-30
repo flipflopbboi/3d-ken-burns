@@ -188,8 +188,8 @@ if __name__ == "__main__":
         process_load(npyImage, {})
 
         objFrom = {
-            "fltCenterU": args.width if args.width else intWidth / 2.0,
-            "fltCenterV": args.height if args.height else intHeight / 2.0,
+            "fltCenterU": args.width if args.width is not None else intWidth / 2.0,
+            "fltCenterV": args.height if args.height is not None else intHeight / 2.0,
             "intCropWidth": int(math.floor(0.97 * intWidth)),
             "intCropHeight": int(math.floor(0.97 * intHeight)),
         }
@@ -230,12 +230,12 @@ if __name__ == "__main__":
 
     # Add border to make all images the same size
     print("🖼 Making all images same size ... ", end="")
-    new_frames = []
+    bordered_frames = []
     for frame in frames_list:
         frame_height, frame_width = frame.shape[0], frame.shape[1]
         top, bottom = split_int_in_half(value=max_height - frame_height)
         left, right = split_int_in_half(value=max_width - frame_width)
-        new_frame = cv2.copyMakeBorder(
+        bordered_frame = cv2.copyMakeBorder(
             src=frame,
             top=top,
             bottom=bottom,
@@ -244,10 +244,10 @@ if __name__ == "__main__":
             borderType=cv2.BORDER_REFLECT,
             value=[0, 0, 0],
         )
-        new_frames.append(new_frame)
+        bordered_frames.append(bordered_frame)
     print("DONE ✅")
 
     # Create output video
-    moviepy.editor.ImageSequenceClip(sequence=new_frames, fps=FPS).write_videofile(
+    moviepy.editor.ImageSequenceClip(sequence=bordered_frames, fps=FPS).write_videofile(
         args.output
     )
