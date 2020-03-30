@@ -192,7 +192,7 @@ if __name__ == "__main__":
 
         objFrom = {
             # "fltCenterU": args.width if args.width is not None else intWidth / 2.0,
-            "fltCenterU": 341.0,
+            "fltCenterU": 1.0,
             # "fltCenterV": args.height if args.height is not None else intHeight / 2.0,
             "fltCenterV": 512.0,
             "intCropWidth": int(math.floor(0.97 * intWidth)),
