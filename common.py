@@ -1,3 +1,6 @@
+import torch
+
+
 def process_load(npyImage, objSettings):
     objCommon["fltFocal"] = 1024 / 2.0
     objCommon["fltBaseline"] = 40.0
