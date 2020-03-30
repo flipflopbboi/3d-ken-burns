@@ -187,6 +187,9 @@ if __name__ == "__main__":
 
         process_load(npyImage, {})
 
+        print(args.width)
+        print(args.height)
+
         objFrom = {
             "fltCenterU": args.width if args.width is not None else intWidth / 2.0,
             "fltCenterV": args.height if args.height is not None else intHeight / 2.0,
