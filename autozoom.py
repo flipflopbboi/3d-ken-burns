@@ -200,7 +200,7 @@ if __name__ == "__main__":
         }
 
         objTo = process_autozoom(
-            {"fltShift": 100000000, "fltZoom": args.zoom, "objFrom": objFrom}
+            {"fltShift": args.shift, "fltZoom": 1000000, "objFrom": objFrom}
         )
 
         npyResult = process_kenburns(
