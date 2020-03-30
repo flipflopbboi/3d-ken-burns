@@ -122,7 +122,7 @@ def parse_args():
     parser.add_argument(
         "-width",
         "--width",
-        type=int,
+        type=float,
         required=False,
         default=None,
         help="Zoom target pixel width (default is middle)",
@@ -130,7 +130,7 @@ def parse_args():
     parser.add_argument(
         "-height",
         "--height",
-        type=int,
+        type=float,
         required=False,
         default=None,
         help="Zoom target pixel height (default is middle)",

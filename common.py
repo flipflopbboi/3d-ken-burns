@@ -218,8 +218,8 @@ def process_autozoom(objSettings):
         # end
     # end
 
-    fltBestU = 0 if fltBestU is None else fltBestU
-    fltBestV = 0 if fltBestV is None else fltBestV
+    # fltBestU = 0 if fltBestU is None else fltBestU
+    # fltBestV = 0 if fltBestV is None else fltBestV
 
 
     return {
