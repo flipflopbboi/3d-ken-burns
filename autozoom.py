@@ -246,8 +246,7 @@ if __name__ == "__main__":
         )
         new_frames.append(new_frame)
     print("DONE ✅")
-    for frame in frames_list:
-        print(frame.shape)
+
     # Create output video
     moviepy.editor.ImageSequenceClip(sequence=new_frames, fps=FPS).write_videofile(
         args.output
