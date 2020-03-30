@@ -212,5 +212,5 @@ def get_result():
 # end
 
 run_with_ngrok(objFlask)
-
+objFlask.run()
 # gevent.pywsgi.WSGIServer(listener=('0.0.0.0', 8081), application=objFlask).serve_forever()
