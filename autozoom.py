@@ -230,7 +230,8 @@ if __name__ == "__main__":
     #
     print("Making all images same size ... ", end="")
     for frame in frames_list:
-        frame_height, frame_width = frame.shape
+        frame_height = frame.shape[0]
+        frame_width = frame.shape[1]
         top = (max_height - frame_height) / 2
         bottom = (max_height - frame_height) / 2
         left = (max_width - frame_width) / 2
