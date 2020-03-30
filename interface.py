@@ -30,6 +30,7 @@ import urllib
 import zipfile
 
 ##########################################################
+from flask_ngrok import run_with_ngrok
 
 assert(int(str('').join(torch.__version__.split('.')[0:2])) >= 12) # requires at least pytorch version 1.2.0
 
@@ -210,4 +211,6 @@ def get_result():
 	return flask.send_file(filename_or_fp=objKenburns, mimetype='video/mp4', as_attachment=True, attachment_filename='kenburns.mp4', cache_timeout=-1)
 # end
 
-gevent.pywsgi.WSGIServer(listener=('0.0.0.0', 8081), application=objFlask).serve_forever()
+run_with_ngrok(objFlask)
+
+# gevent.pywsgi.WSGIServer(listener=('0.0.0.0', 8081), application=objFlask).serve_forever()
