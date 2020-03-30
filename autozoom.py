@@ -60,9 +60,6 @@ exec(open("./models/pointcloud-inpainting.py", "r").read())
 
 ##########################################################
 
-arguments_strIn = "./images/doublestrike.jpg"
-arguments_strOut = "./autozoom.mp4"
-
 FPS = 25
 
 ##########################################################
