@@ -213,9 +213,14 @@ def process_autozoom(objSettings):
                 fltBest = (tenExisting > 0.0).float().sum().item()
                 fltBestU = fltShiftU
                 fltBestV = fltShiftV
+
             # end
         # end
     # end
+    print(objSettings["objFrom"]["fltCenterU"])
+    print(objSettings["objFrom"]["fltCenterV"])
+    print(fltBestU)
+    print(fltBestV)
 
     return {
         "fltCenterU": objSettings["objFrom"]["fltCenterU"] + fltBestU,
