@@ -1,355 +1,610 @@
 def process_load(npyImage, objSettings):
-	objCommon['fltFocal'] = 1024 / 2.0
-	objCommon['fltBaseline'] = 40.0
-	objCommon['intWidth'] = npyImage.shape[1]
-	objCommon['intHeight'] = npyImage.shape[0]
+    objCommon["fltFocal"] = 1024 / 2.0
+    objCommon["fltBaseline"] = 40.0
+    objCommon["intWidth"] = npyImage.shape[1]
+    objCommon["intHeight"] = npyImage.shape[0]
 
-	tenImage = torch.FloatTensor(npyImage.transpose(2, 0, 1)).unsqueeze(0).cuda() / 255.0
-	tenDisparity = disparity_estimation(tenImage)
-	tenDisparity = disparity_adjustment(tenImage, tenDisparity)
-	tenDisparity = disparity_refinement(tenImage, tenDisparity)
-	tenDisparity = tenDisparity / tenDisparity.max() * objCommon['fltBaseline']
-	tenDepth = (objCommon['fltFocal'] * objCommon['fltBaseline']) / (tenDisparity + 0.0000001)
-	tenValid = (spatial_filter(tenDisparity / tenDisparity.max(), 'laplacian').abs() < 0.03).float()
-	tenPoints = depth_to_points(tenDepth * tenValid, objCommon['fltFocal'])
-	tenUnaltered = depth_to_points(tenDepth, objCommon['fltFocal'])
+    tenImage = (
+        torch.FloatTensor(npyImage.transpose(2, 0, 1)).unsqueeze(0).cuda() / 255.0
+    )
+    tenDisparity = disparity_estimation(tenImage)
+    tenDisparity = disparity_adjustment(tenImage, tenDisparity)
+    tenDisparity = disparity_refinement(tenImage, tenDisparity)
+    tenDisparity = tenDisparity / tenDisparity.max() * objCommon["fltBaseline"]
+    tenDepth = (objCommon["fltFocal"] * objCommon["fltBaseline"]) / (
+        tenDisparity + 0.0000001
+    )
+    tenValid = (
+        spatial_filter(tenDisparity / tenDisparity.max(), "laplacian").abs() < 0.03
+    ).float()
+    tenPoints = depth_to_points(tenDepth * tenValid, objCommon["fltFocal"])
+    tenUnaltered = depth_to_points(tenDepth, objCommon["fltFocal"])
 
-	objCommon['fltDispmin'] = tenDisparity.min().item()
-	objCommon['fltDispmax'] = tenDisparity.max().item()
-	objCommon['objDepthrange'] = cv2.minMaxLoc(src=tenDepth[0, 0, 128:-128, 128:-128].detach().cpu().numpy(), mask=None)
-	objCommon['tenRawImage'] = tenImage
-	objCommon['tenRawDisparity'] = tenDisparity
-	objCommon['tenRawDepth'] = tenDepth
-	objCommon['tenRawPoints'] = tenPoints.view(1, 3, -1)
-	objCommon['tenRawUnaltered'] = tenUnaltered.view(1, 3, -1)
+    objCommon["fltDispmin"] = tenDisparity.min().item()
+    objCommon["fltDispmax"] = tenDisparity.max().item()
+    objCommon["objDepthrange"] = cv2.minMaxLoc(
+        src=tenDepth[0, 0, 128:-128, 128:-128].detach().cpu().numpy(), mask=None
+    )
+    objCommon["tenRawImage"] = tenImage
+    objCommon["tenRawDisparity"] = tenDisparity
+    objCommon["tenRawDepth"] = tenDepth
+    objCommon["tenRawPoints"] = tenPoints.view(1, 3, -1)
+    objCommon["tenRawUnaltered"] = tenUnaltered.view(1, 3, -1)
 
-	objCommon['tenInpaImage'] = objCommon['tenRawImage'].view(1, 3, -1)
-	objCommon['tenInpaDisparity'] = objCommon['tenRawDisparity'].view(1, 1, -1)
-	objCommon['tenInpaDepth'] = objCommon['tenRawDepth'].view(1, 1, -1)
-	objCommon['tenInpaPoints'] = objCommon['tenRawPoints'].view(1, 3, -1)
+    objCommon["tenInpaImage"] = objCommon["tenRawImage"].view(1, 3, -1)
+    objCommon["tenInpaDisparity"] = objCommon["tenRawDisparity"].view(1, 1, -1)
+    objCommon["tenInpaDepth"] = objCommon["tenRawDepth"].view(1, 1, -1)
+    objCommon["tenInpaPoints"] = objCommon["tenRawPoints"].view(1, 3, -1)
+
+
 # end
+
 
 def process_inpaint(tenShift):
-	objInpainted = pointcloud_inpainting(objCommon['tenRawImage'], objCommon['tenRawDisparity'], tenShift)
+    objInpainted = pointcloud_inpainting(
+        objCommon["tenRawImage"], objCommon["tenRawDisparity"], tenShift
+    )
 
-	objInpainted['tenDepth'] = (objCommon['fltFocal'] * objCommon['fltBaseline']) / (objInpainted['tenDisparity'] + 0.0000001)
-	objInpainted['tenValid'] = (spatial_filter(objInpainted['tenDisparity'] / objInpainted['tenDisparity'].max(), 'laplacian').abs() < 0.03).float()
-	objInpainted['tenPoints'] = depth_to_points(objInpainted['tenDepth'] * objInpainted['tenValid'], objCommon['fltFocal'])
-	objInpainted['tenPoints'] = objInpainted['tenPoints'].view(1, 3, -1)
-	objInpainted['tenPoints'] = objInpainted['tenPoints'] - tenShift
+    objInpainted["tenDepth"] = (objCommon["fltFocal"] * objCommon["fltBaseline"]) / (
+        objInpainted["tenDisparity"] + 0.0000001
+    )
+    objInpainted["tenValid"] = (
+        spatial_filter(
+            objInpainted["tenDisparity"] / objInpainted["tenDisparity"].max(),
+            "laplacian",
+        ).abs()
+        < 0.03
+    ).float()
+    objInpainted["tenPoints"] = depth_to_points(
+        objInpainted["tenDepth"] * objInpainted["tenValid"], objCommon["fltFocal"]
+    )
+    objInpainted["tenPoints"] = objInpainted["tenPoints"].view(1, 3, -1)
+    objInpainted["tenPoints"] = objInpainted["tenPoints"] - tenShift
 
-	tenMask = (objInpainted['tenExisting'] == 0.0).view(1, 1, -1)
+    tenMask = (objInpainted["tenExisting"] == 0.0).view(1, 1, -1)
 
-	objCommon['tenInpaImage'] = torch.cat([ objCommon['tenInpaImage'], objInpainted['tenImage'].view(1, 3, -1)[tenMask.expand(-1, 3, -1)].view(1, 3, -1) ], 2)
-	objCommon['tenInpaDisparity'] = torch.cat([ objCommon['tenInpaDisparity'], objInpainted['tenDisparity'].view(1, 1, -1)[tenMask.expand(-1, 1, -1)].view(1, 1, -1) ], 2)
-	objCommon['tenInpaDepth'] = torch.cat([ objCommon['tenInpaDepth'], objInpainted['tenDepth'].view(1, 1, -1)[tenMask.expand(-1, 1, -1)].view(1, 1, -1) ], 2)
-	objCommon['tenInpaPoints'] = torch.cat([ objCommon['tenInpaPoints'], objInpainted['tenPoints'].view(1, 3, -1)[tenMask.expand(-1, 3, -1)].view(1, 3, -1) ], 2)
+    objCommon["tenInpaImage"] = torch.cat(
+        [
+            objCommon["tenInpaImage"],
+            objInpainted["tenImage"]
+            .view(1, 3, -1)[tenMask.expand(-1, 3, -1)]
+            .view(1, 3, -1),
+        ],
+        2,
+    )
+    objCommon["tenInpaDisparity"] = torch.cat(
+        [
+            objCommon["tenInpaDisparity"],
+            objInpainted["tenDisparity"]
+            .view(1, 1, -1)[tenMask.expand(-1, 1, -1)]
+            .view(1, 1, -1),
+        ],
+        2,
+    )
+    objCommon["tenInpaDepth"] = torch.cat(
+        [
+            objCommon["tenInpaDepth"],
+            objInpainted["tenDepth"]
+            .view(1, 1, -1)[tenMask.expand(-1, 1, -1)]
+            .view(1, 1, -1),
+        ],
+        2,
+    )
+    objCommon["tenInpaPoints"] = torch.cat(
+        [
+            objCommon["tenInpaPoints"],
+            objInpainted["tenPoints"]
+            .view(1, 3, -1)[tenMask.expand(-1, 3, -1)]
+            .view(1, 3, -1),
+        ],
+        2,
+    )
+
+
 # end
+
 
 def process_shift(objSettings):
-	fltClosestDepth = objCommon['objDepthrange'][0] + (objSettings['fltDepthTo'] - objSettings['fltDepthFrom'])
-	fltClosestFromU = objCommon['objDepthrange'][2][0]
-	fltClosestFromV = objCommon['objDepthrange'][2][1]
-	fltClosestToU = fltClosestFromU + objSettings['fltShiftU']
-	fltClosestToV = fltClosestFromV + objSettings['fltShiftV']
-	fltClosestFromX = ((fltClosestFromU - (objCommon['intWidth'] / 2.0)) * fltClosestDepth) / objCommon['fltFocal']
-	fltClosestFromY = ((fltClosestFromV - (objCommon['intHeight'] / 2.0)) * fltClosestDepth) / objCommon['fltFocal']
-	fltClosestToX = ((fltClosestToU - (objCommon['intWidth'] / 2.0)) * fltClosestDepth) / objCommon['fltFocal']
-	fltClosestToY = ((fltClosestToV - (objCommon['intHeight'] / 2.0)) * fltClosestDepth) / objCommon['fltFocal']
+    fltClosestDepth = objCommon["objDepthrange"][0] + (
+        objSettings["fltDepthTo"] - objSettings["fltDepthFrom"]
+    )
+    fltClosestFromU = objCommon["objDepthrange"][2][0]
+    fltClosestFromV = objCommon["objDepthrange"][2][1]
+    fltClosestToU = fltClosestFromU + objSettings["fltShiftU"]
+    fltClosestToV = fltClosestFromV + objSettings["fltShiftV"]
+    fltClosestFromX = (
+        (fltClosestFromU - (objCommon["intWidth"] / 2.0)) * fltClosestDepth
+    ) / objCommon["fltFocal"]
+    fltClosestFromY = (
+        (fltClosestFromV - (objCommon["intHeight"] / 2.0)) * fltClosestDepth
+    ) / objCommon["fltFocal"]
+    fltClosestToX = (
+        (fltClosestToU - (objCommon["intWidth"] / 2.0)) * fltClosestDepth
+    ) / objCommon["fltFocal"]
+    fltClosestToY = (
+        (fltClosestToV - (objCommon["intHeight"] / 2.0)) * fltClosestDepth
+    ) / objCommon["fltFocal"]
 
-	fltShiftX = fltClosestFromX - fltClosestToX
-	fltShiftY = fltClosestFromY - fltClosestToY
-	fltShiftZ = objSettings['fltDepthTo'] - objSettings['fltDepthFrom']
+    fltShiftX = fltClosestFromX - fltClosestToX
+    fltShiftY = fltClosestFromY - fltClosestToY
+    fltShiftZ = objSettings["fltDepthTo"] - objSettings["fltDepthFrom"]
 
-	tenShift = torch.FloatTensor([ fltShiftX, fltShiftY, fltShiftZ ]).view(1, 3, 1).cuda()
+    tenShift = torch.FloatTensor([fltShiftX, fltShiftY, fltShiftZ]).view(1, 3, 1).cuda()
 
-	tenPoints = objSettings['tenPoints'].clone()
+    tenPoints = objSettings["tenPoints"].clone()
 
-	tenPoints[:, 0:1, :] *= tenPoints[:, 2:3, :] / (objSettings['tenPoints'][:, 2:3, :] + 0.0000001)
-	tenPoints[:, 1:2, :] *= tenPoints[:, 2:3, :] / (objSettings['tenPoints'][:, 2:3, :] + 0.0000001)
+    tenPoints[:, 0:1, :] *= tenPoints[:, 2:3, :] / (
+        objSettings["tenPoints"][:, 2:3, :] + 0.0000001
+    )
+    tenPoints[:, 1:2, :] *= tenPoints[:, 2:3, :] / (
+        objSettings["tenPoints"][:, 2:3, :] + 0.0000001
+    )
 
-	tenPoints += tenShift
+    tenPoints += tenShift
 
-	return tenPoints, tenShift
+    return tenPoints, tenShift
+
+
 # end
+
 
 def process_autozoom(objSettings):
-	npyShiftU = numpy.linspace(-objSettings['fltShift'], objSettings['fltShift'], 16)[None, :].repeat(16, 0)
-	npyShiftV = numpy.linspace(-objSettings['fltShift'], objSettings['fltShift'], 16)[:, None].repeat(16, 1)
-	fltCropWidth = objSettings['objFrom']['intCropWidth'] / objSettings['fltZoom']
-	fltCropHeight = objSettings['objFrom']['intCropHeight'] / objSettings['fltZoom']
+    npyShiftU = numpy.linspace(-objSettings["fltShift"], objSettings["fltShift"], 16)[
+        None, :
+    ].repeat(16, 0)
+    npyShiftV = numpy.linspace(-objSettings["fltShift"], objSettings["fltShift"], 16)[
+        :, None
+    ].repeat(16, 1)
+    fltCropWidth = objSettings["objFrom"]["intCropWidth"] / objSettings["fltZoom"]
+    fltCropHeight = objSettings["objFrom"]["intCropHeight"] / objSettings["fltZoom"]
 
-	fltDepthFrom = objCommon['objDepthrange'][0]
-	fltDepthTo = objCommon['objDepthrange'][0] * (fltCropWidth / objSettings['objFrom']['intCropWidth'])
+    fltDepthFrom = objCommon["objDepthrange"][0]
+    fltDepthTo = objCommon["objDepthrange"][0] * (
+        fltCropWidth / objSettings["objFrom"]["intCropWidth"]
+    )
 
-	fltBest = 0.0
-	fltBestU = None
-	fltBestV = None
+    fltBest = 0.0
+    fltBestU = None
+    fltBestV = None
 
-	for intU in range(16):
-		for intV in range(16):
-			fltShiftU = npyShiftU[intU, intV].item()
-			fltShiftV = npyShiftV[intU, intV].item()
+    for intU in range(16):
+        for intV in range(16):
+            fltShiftU = npyShiftU[intU, intV].item()
+            fltShiftV = npyShiftV[intU, intV].item()
 
-			if objSettings['objFrom']['fltCenterU'] + fltShiftU < fltCropWidth / 2.0:
-				continue
+            if objSettings["objFrom"]["fltCenterU"] + fltShiftU < fltCropWidth / 2.0:
+                continue
 
-			elif objSettings['objFrom']['fltCenterU'] + fltShiftU > objCommon['intWidth'] - (fltCropWidth / 2.0):
-				continue
+            elif objSettings["objFrom"]["fltCenterU"] + fltShiftU > objCommon[
+                "intWidth"
+            ] - (fltCropWidth / 2.0):
+                continue
 
-			elif objSettings['objFrom']['fltCenterV'] + fltShiftV < fltCropHeight / 2.0:
-				continue
+            elif objSettings["objFrom"]["fltCenterV"] + fltShiftV < fltCropHeight / 2.0:
+                continue
 
-			elif objSettings['objFrom']['fltCenterV'] + fltShiftV > objCommon['intHeight'] - (fltCropHeight / 2.0):
-				continue
+            elif objSettings["objFrom"]["fltCenterV"] + fltShiftV > objCommon[
+                "intHeight"
+            ] - (fltCropHeight / 2.0):
+                continue
 
-			# end
+            # end
 
-			tenPoints = process_shift({
-				'tenPoints': objCommon['tenRawPoints'],
-				'fltShiftU': fltShiftU,
-				'fltShiftV': fltShiftV,
-				'fltDepthFrom': fltDepthFrom,
-				'fltDepthTo': fltDepthTo
-			})[0]
+            tenPoints = process_shift(
+                {
+                    "tenPoints": objCommon["tenRawPoints"],
+                    "fltShiftU": fltShiftU,
+                    "fltShiftV": fltShiftV,
+                    "fltDepthFrom": fltDepthFrom,
+                    "fltDepthTo": fltDepthTo,
+                }
+            )[0]
 
-			tenRender, tenExisting = render_pointcloud(tenPoints, objCommon['tenRawImage'].view(1, 3, -1), objCommon['intWidth'], objCommon['intHeight'], objCommon['fltFocal'], objCommon['fltBaseline'])
+            tenRender, tenExisting = render_pointcloud(
+                tenPoints,
+                objCommon["tenRawImage"].view(1, 3, -1),
+                objCommon["intWidth"],
+                objCommon["intHeight"],
+                objCommon["fltFocal"],
+                objCommon["fltBaseline"],
+            )
 
-			if fltBest < (tenExisting > 0.0).float().sum().item():
-				fltBest = (tenExisting > 0.0).float().sum().item()
-				fltBestU = fltShiftU
-				fltBestV = fltShiftV
-			# end
-		# end
-	# end
+            if fltBest < (tenExisting > 0.0).float().sum().item():
+                fltBest = (tenExisting > 0.0).float().sum().item()
+                fltBestU = fltShiftU
+                fltBestV = fltShiftV
+            # end
+        # end
+    # end
 
-	return {
-		'fltCenterU': objSettings['objFrom']['fltCenterU'] + fltBestU,
-		'fltCenterV': objSettings['objFrom']['fltCenterV'] + fltBestV,
-		'intCropWidth': int(round(objSettings['objFrom']['intCropWidth'] / objSettings['fltZoom'])),
-		'intCropHeight': int(round(objSettings['objFrom']['intCropHeight'] / objSettings['fltZoom']))
-	}
+    return {
+        "fltCenterU": objSettings["objFrom"]["fltCenterU"] + fltBestU,
+        "fltCenterV": objSettings["objFrom"]["fltCenterV"] + fltBestV,
+        "intCropWidth": int(
+            round(objSettings["objFrom"]["intCropWidth"] / objSettings["fltZoom"])
+        ),
+        "intCropHeight": int(
+            round(objSettings["objFrom"]["intCropHeight"] / objSettings["fltZoom"])
+        ),
+    }
+
+
 # end
 
+
 def process_kenburns(objSettings):
-	npyOutputs = []
+    npyOutputs = []
 
-	if 'boolInpaint' not in objSettings or objSettings['boolInpaint'] == True:
-		objCommon['tenInpaImage'] = objCommon['tenRawImage'].view(1, 3, -1)
-		objCommon['tenInpaDisparity'] = objCommon['tenRawDisparity'].view(1, 1, -1)
-		objCommon['tenInpaDepth'] = objCommon['tenRawDepth'].view(1, 1, -1)
-		objCommon['tenInpaPoints'] = objCommon['tenRawPoints'].view(1, 3, -1)
+    if "boolInpaint" not in objSettings or objSettings["boolInpaint"] == True:
+        objCommon["tenInpaImage"] = objCommon["tenRawImage"].view(1, 3, -1)
+        objCommon["tenInpaDisparity"] = objCommon["tenRawDisparity"].view(1, 1, -1)
+        objCommon["tenInpaDepth"] = objCommon["tenRawDepth"].view(1, 1, -1)
+        objCommon["tenInpaPoints"] = objCommon["tenRawPoints"].view(1, 3, -1)
 
-		for fltStep in [ 0.0, 1.0 ]:
-			fltFrom = 1.0 - fltStep
-			fltTo = 1.0 - fltFrom
+        for fltStep in [0.0, 1.0]:
+            fltFrom = 1.0 - fltStep
+            fltTo = 1.0 - fltFrom
 
-			fltShiftU = ((fltFrom * objSettings['objFrom']['fltCenterU']) + (fltTo * objSettings['objTo']['fltCenterU'])) - (objCommon['intWidth'] / 2.0)
-			fltShiftV = ((fltFrom * objSettings['objFrom']['fltCenterV']) + (fltTo * objSettings['objTo']['fltCenterV'])) - (objCommon['intHeight'] / 2.0)
-			fltCropWidth = (fltFrom * objSettings['objFrom']['intCropWidth']) + (fltTo * objSettings['objTo']['intCropWidth'])
-			fltCropHeight = (fltFrom * objSettings['objFrom']['intCropHeight']) + (fltTo * objSettings['objTo']['intCropHeight'])
+            fltShiftU = (
+                (fltFrom * objSettings["objFrom"]["fltCenterU"])
+                + (fltTo * objSettings["objTo"]["fltCenterU"])
+            ) - (objCommon["intWidth"] / 2.0)
+            fltShiftV = (
+                (fltFrom * objSettings["objFrom"]["fltCenterV"])
+                + (fltTo * objSettings["objTo"]["fltCenterV"])
+            ) - (objCommon["intHeight"] / 2.0)
+            fltCropWidth = (fltFrom * objSettings["objFrom"]["intCropWidth"]) + (
+                fltTo * objSettings["objTo"]["intCropWidth"]
+            )
+            fltCropHeight = (fltFrom * objSettings["objFrom"]["intCropHeight"]) + (
+                fltTo * objSettings["objTo"]["intCropHeight"]
+            )
 
-			fltDepthFrom = objCommon['objDepthrange'][0]
-			fltDepthTo = objCommon['objDepthrange'][0] * (fltCropWidth / max(objSettings['objFrom']['intCropWidth'], objSettings['objTo']['intCropWidth']))
+            fltDepthFrom = objCommon["objDepthrange"][0]
+            fltDepthTo = objCommon["objDepthrange"][0] * (
+                fltCropWidth
+                / max(
+                    objSettings["objFrom"]["intCropWidth"],
+                    objSettings["objTo"]["intCropWidth"],
+                )
+            )
 
-			tenShift = process_shift({
-				'tenPoints': objCommon['tenInpaPoints'],
-				'fltShiftU': fltShiftU,
-				'fltShiftV': fltShiftV,
-				'fltDepthFrom': fltDepthFrom,
-				'fltDepthTo': fltDepthTo
-			})[1]
+            tenShift = process_shift(
+                {
+                    "tenPoints": objCommon["tenInpaPoints"],
+                    "fltShiftU": fltShiftU,
+                    "fltShiftV": fltShiftV,
+                    "fltDepthFrom": fltDepthFrom,
+                    "fltDepthTo": fltDepthTo,
+                }
+            )[1]
 
-			process_inpaint(1.1 * tenShift)
-		# end
-	# end
+            process_inpaint(1.1 * tenShift)
+        # end
+    # end
 
-	for fltStep in objSettings['fltSteps']:
-		fltFrom = 1.0 - fltStep
-		fltTo = 1.0 - fltFrom
+    for fltStep in objSettings["fltSteps"]:
+        fltFrom = 1.0 - fltStep
+        fltTo = 1.0 - fltFrom
 
-		fltShiftU = ((fltFrom * objSettings['objFrom']['fltCenterU']) + (fltTo * objSettings['objTo']['fltCenterU'])) - (objCommon['intWidth'] / 2.0)
-		fltShiftV = ((fltFrom * objSettings['objFrom']['fltCenterV']) + (fltTo * objSettings['objTo']['fltCenterV'])) - (objCommon['intHeight'] / 2.0)
-		fltCropWidth = (fltFrom * objSettings['objFrom']['intCropWidth']) + (fltTo * objSettings['objTo']['intCropWidth'])
-		fltCropHeight = (fltFrom * objSettings['objFrom']['intCropHeight']) + (fltTo * objSettings['objTo']['intCropHeight'])
+        fltShiftU = (
+            (fltFrom * objSettings["objFrom"]["fltCenterU"])
+            + (fltTo * objSettings["objTo"]["fltCenterU"])
+        ) - (objCommon["intWidth"] / 2.0)
+        fltShiftV = (
+            (fltFrom * objSettings["objFrom"]["fltCenterV"])
+            + (fltTo * objSettings["objTo"]["fltCenterV"])
+        ) - (objCommon["intHeight"] / 2.0)
+        fltCropWidth = (fltFrom * objSettings["objFrom"]["intCropWidth"]) + (
+            fltTo * objSettings["objTo"]["intCropWidth"]
+        )
+        fltCropHeight = (fltFrom * objSettings["objFrom"]["intCropHeight"]) + (
+            fltTo * objSettings["objTo"]["intCropHeight"]
+        )
 
-		fltDepthFrom = objCommon['objDepthrange'][0]
-		fltDepthTo = objCommon['objDepthrange'][0] * (fltCropWidth / max(objSettings['objFrom']['intCropWidth'], objSettings['objTo']['intCropWidth']))
+        fltDepthFrom = objCommon["objDepthrange"][0]
+        fltDepthTo = objCommon["objDepthrange"][0] * (
+            fltCropWidth
+            / max(
+                objSettings["objFrom"]["intCropWidth"],
+                objSettings["objTo"]["intCropWidth"],
+            )
+        )
 
-		tenPoints = process_shift({
-			'tenPoints': objCommon['tenInpaPoints'],
-			'fltShiftU': fltShiftU,
-			'fltShiftV': fltShiftV,
-			'fltDepthFrom': fltDepthFrom,
-			'fltDepthTo': fltDepthTo
-		})[0]
+        tenPoints = process_shift(
+            {
+                "tenPoints": objCommon["tenInpaPoints"],
+                "fltShiftU": fltShiftU,
+                "fltShiftV": fltShiftV,
+                "fltDepthFrom": fltDepthFrom,
+                "fltDepthTo": fltDepthTo,
+            }
+        )[0]
 
-		tenRender, tenExisting = render_pointcloud(tenPoints, torch.cat([ objCommon['tenInpaImage'], objCommon['tenInpaDepth'] ], 1).view(1, 4, -1), objCommon['intWidth'], objCommon['intHeight'], objCommon['fltFocal'], objCommon['fltBaseline'])
+        tenRender, tenExisting = render_pointcloud(
+            tenPoints,
+            torch.cat([objCommon["tenInpaImage"], objCommon["tenInpaDepth"]], 1).view(
+                1, 4, -1
+            ),
+            objCommon["intWidth"],
+            objCommon["intHeight"],
+            objCommon["fltFocal"],
+            objCommon["fltBaseline"],
+        )
 
-		tenRender = fill_disocclusion(tenRender, tenRender[:, 3:4, :, :] * (tenExisting > 0.0).float())
+        tenRender = fill_disocclusion(
+            tenRender, tenRender[:, 3:4, :, :] * (tenExisting > 0.0).float()
+        )
 
-		npyOutput = (tenRender[0, 0:3, :, :].detach().cpu().numpy().transpose(1, 2, 0) * 255.0).clip(0.0, 255.0).astype(numpy.uint8)
-		npyOutput = cv2.getRectSubPix(image=npyOutput, patchSize=(max(objSettings['objFrom']['intCropWidth'], objSettings['objTo']['intCropWidth']), max(objSettings['objFrom']['intCropHeight'], objSettings['objTo']['intCropHeight'])), center=(objCommon['intWidth'] / 2.0, objCommon['intHeight'] / 2.0))
-		npyOutput = cv2.resize(src=npyOutput, dsize=(objCommon['intWidth'], objCommon['intHeight']), fx=0.0, fy=0.0, interpolation=cv2.INTER_LINEAR)
+        npyOutput = (
+            (tenRender[0, 0:3, :, :].detach().cpu().numpy().transpose(1, 2, 0) * 255.0)
+            .clip(0.0, 255.0)
+            .astype(numpy.uint8)
+        )
+        npyOutput = cv2.getRectSubPix(
+            image=npyOutput,
+            patchSize=(
+                max(
+                    objSettings["objFrom"]["intCropWidth"],
+                    objSettings["objTo"]["intCropWidth"],
+                ),
+                max(
+                    objSettings["objFrom"]["intCropHeight"],
+                    objSettings["objTo"]["intCropHeight"],
+                ),
+            ),
+            center=(objCommon["intWidth"] / 2.0, objCommon["intHeight"] / 2.0),
+        )
+        npyOutput = cv2.resize(
+            src=npyOutput,
+            dsize=(objCommon["intWidth"], objCommon["intHeight"]),
+            fx=0.0,
+            fy=0.0,
+            interpolation=cv2.INTER_LINEAR,
+        )
 
-		npyOutputs.append(npyOutput)
-	# end
+        npyOutputs.append(npyOutput)
+    # end
 
-	return npyOutputs
+    return npyOutputs
+
+
 # end
 
 ##########################################################
 
+
 def preprocess_kernel(strKernel, objVariables):
-	with open('./common.cuda', 'r') as objFile:
-		strKernel = objFile.read() + strKernel
-	# end
+    with open("./common.cuda", "r") as objFile:
+        strKernel = objFile.read() + strKernel
+    # end
 
-	for strVariable in objVariables:
-		objValue = objVariables[strVariable]
+    for strVariable in objVariables:
+        objValue = objVariables[strVariable]
 
-		if type(objValue) == int:
-			strKernel = strKernel.replace('{{' + strVariable + '}}', str(objValue))
+        if type(objValue) == int:
+            strKernel = strKernel.replace("{{" + strVariable + "}}", str(objValue))
 
-		elif type(objValue) == float:
-			strKernel = strKernel.replace('{{' + strVariable + '}}', str(objValue))
+        elif type(objValue) == float:
+            strKernel = strKernel.replace("{{" + strVariable + "}}", str(objValue))
 
-		elif type(objValue) == str:
-			strKernel = strKernel.replace('{{' + strVariable + '}}', objValue)
+        elif type(objValue) == str:
+            strKernel = strKernel.replace("{{" + strVariable + "}}", objValue)
 
-		# end
-	# end
+        # end
+    # end
 
-	while True:
-		objMatch = re.search('(SIZE_)([0-4])(\()([^\)]*)(\))', strKernel)
+    while True:
+        objMatch = re.search("(SIZE_)([0-4])(\()([^\)]*)(\))", strKernel)
 
-		if objMatch is None:
-			break
-		# end
+        if objMatch is None:
+            break
+        # end
 
-		intArg = int(objMatch.group(2))
+        intArg = int(objMatch.group(2))
 
-		strTensor = objMatch.group(4)
-		intSizes = objVariables[strTensor].size()
+        strTensor = objMatch.group(4)
+        intSizes = objVariables[strTensor].size()
 
-		strKernel = strKernel.replace(objMatch.group(), str(intSizes[intArg]))
-	# end
+        strKernel = strKernel.replace(objMatch.group(), str(intSizes[intArg]))
+    # end
 
-	while True:
-		objMatch = re.search('(STRIDE_)([0-4])(\()([^\)]*)(\))', strKernel)
+    while True:
+        objMatch = re.search("(STRIDE_)([0-4])(\()([^\)]*)(\))", strKernel)
 
-		if objMatch is None:
-			break
-		# end
+        if objMatch is None:
+            break
+        # end
 
-		intArg = int(objMatch.group(2))
+        intArg = int(objMatch.group(2))
 
-		strTensor = objMatch.group(4)
-		intStrides = objVariables[strTensor].stride()
+        strTensor = objMatch.group(4)
+        intStrides = objVariables[strTensor].stride()
 
-		strKernel = strKernel.replace(objMatch.group(), str(intStrides[intArg]))
-	# end
+        strKernel = strKernel.replace(objMatch.group(), str(intStrides[intArg]))
+    # end
 
-	while True:
-		objMatch = re.search('(OFFSET_)([0-4])(\()([^\)]+)(\))', strKernel)
+    while True:
+        objMatch = re.search("(OFFSET_)([0-4])(\()([^\)]+)(\))", strKernel)
 
-		if objMatch is None:
-			break
-		# end
+        if objMatch is None:
+            break
+        # end
 
-		intArgs = int(objMatch.group(2))
-		strArgs = objMatch.group(4).split(',')
+        intArgs = int(objMatch.group(2))
+        strArgs = objMatch.group(4).split(",")
 
-		strTensor = strArgs[0]
-		intStrides = objVariables[strTensor].stride()
-		strIndex = [ '((' + strArgs[intArg + 1].replace('{', '(').replace('}', ')').strip() + ')*' + str(intStrides[intArg]) + ')' for intArg in range(intArgs) ]
+        strTensor = strArgs[0]
+        intStrides = objVariables[strTensor].stride()
+        strIndex = [
+            "(("
+            + strArgs[intArg + 1].replace("{", "(").replace("}", ")").strip()
+            + ")*"
+            + str(intStrides[intArg])
+            + ")"
+            for intArg in range(intArgs)
+        ]
 
-		strKernel = strKernel.replace(objMatch.group(0), '(' + str.join('+', strIndex) + ')')
-	# end
+        strKernel = strKernel.replace(
+            objMatch.group(0), "(" + str.join("+", strIndex) + ")"
+        )
+    # end
 
-	while True:
-		objMatch = re.search('(VALUE_)([0-4])(\()([^\)]+)(\))', strKernel)
+    while True:
+        objMatch = re.search("(VALUE_)([0-4])(\()([^\)]+)(\))", strKernel)
 
-		if objMatch is None:
-			break
-		# end
+        if objMatch is None:
+            break
+        # end
 
-		intArgs = int(objMatch.group(2))
-		strArgs = objMatch.group(4).split(',')
+        intArgs = int(objMatch.group(2))
+        strArgs = objMatch.group(4).split(",")
 
-		strTensor = strArgs[0]
-		intStrides = objVariables[strTensor].stride()
-		strIndex = [ '((' + strArgs[intArg + 1].replace('{', '(').replace('}', ')').strip() + ')*' + str(intStrides[intArg]) + ')' for intArg in range(intArgs) ]
+        strTensor = strArgs[0]
+        intStrides = objVariables[strTensor].stride()
+        strIndex = [
+            "(("
+            + strArgs[intArg + 1].replace("{", "(").replace("}", ")").strip()
+            + ")*"
+            + str(intStrides[intArg])
+            + ")"
+            for intArg in range(intArgs)
+        ]
 
-		strKernel = strKernel.replace(objMatch.group(0), strTensor + '[' + str.join('+', strIndex) + ']')
-	# end
+        strKernel = strKernel.replace(
+            objMatch.group(0), strTensor + "[" + str.join("+", strIndex) + "]"
+        )
+    # end
 
-	return strKernel
+    return strKernel
+
+
 # end
+
 
 @cupy.util.memoize(for_each_device=True)
 def launch_kernel(strFunction, strKernel):
-	if 'CUDA_HOME' not in os.environ:
-		os.environ['CUDA_HOME'] = sorted(glob.glob('/usr/local/cuda-*'))[-1]
-	# end
+    if "CUDA_HOME" not in os.environ:
+        os.environ["CUDA_HOME"] = sorted(glob.glob("/usr/local/cuda-*"))[-1]
+    # end
 
-	return cupy.cuda.compile_with_cache(strKernel, tuple([ '-I ' + os.environ['CUDA_HOME'], '-I ' + os.environ['CUDA_HOME'] + '/include' ])).get_function(strFunction)
+    return cupy.cuda.compile_with_cache(
+        strKernel,
+        tuple(
+            [
+                "-I " + os.environ["CUDA_HOME"],
+                "-I " + os.environ["CUDA_HOME"] + "/include",
+            ]
+        ),
+    ).get_function(strFunction)
+
+
 # end
+
 
 def depth_to_points(tenDepth, fltFocal):
-	tenHorizontal = torch.linspace((-0.5 * tenDepth.shape[3]) + 0.5, (0.5 * tenDepth.shape[3]) - 0.5, tenDepth.shape[3]).view(1, 1, 1, tenDepth.shape[3]).expand(tenDepth.shape[0], -1, tenDepth.shape[2], -1)
-	tenHorizontal = tenHorizontal * (1.0 / fltFocal)
-	tenHorizontal = tenHorizontal.type_as(tenDepth)
+    tenHorizontal = (
+        torch.linspace(
+            (-0.5 * tenDepth.shape[3]) + 0.5,
+            (0.5 * tenDepth.shape[3]) - 0.5,
+            tenDepth.shape[3],
+        )
+        .view(1, 1, 1, tenDepth.shape[3])
+        .expand(tenDepth.shape[0], -1, tenDepth.shape[2], -1)
+    )
+    tenHorizontal = tenHorizontal * (1.0 / fltFocal)
+    tenHorizontal = tenHorizontal.type_as(tenDepth)
 
-	tenVertical = torch.linspace((-0.5 * tenDepth.shape[2]) + 0.5, (0.5 * tenDepth.shape[2]) - 0.5, tenDepth.shape[2]).view(1, 1, tenDepth.shape[2], 1).expand(tenDepth.shape[0], -1, -1, tenDepth.shape[3])
-	tenVertical = tenVertical * (1.0 / fltFocal)
-	tenVertical = tenVertical.type_as(tenDepth)
+    tenVertical = (
+        torch.linspace(
+            (-0.5 * tenDepth.shape[2]) + 0.5,
+            (0.5 * tenDepth.shape[2]) - 0.5,
+            tenDepth.shape[2],
+        )
+        .view(1, 1, tenDepth.shape[2], 1)
+        .expand(tenDepth.shape[0], -1, -1, tenDepth.shape[3])
+    )
+    tenVertical = tenVertical * (1.0 / fltFocal)
+    tenVertical = tenVertical.type_as(tenDepth)
 
-	return torch.cat([ tenDepth * tenHorizontal, tenDepth * tenVertical, tenDepth ], 1)
+    return torch.cat([tenDepth * tenHorizontal, tenDepth * tenVertical, tenDepth], 1)
+
+
 # end
+
 
 def spatial_filter(tenInput, strType):
-	tenOutput = None
+    tenOutput = None
 
-	if strType == 'laplacian':
-		tenLaplacian = tenInput.new_zeros(tenInput.shape[1], tenInput.shape[1], 3, 3)
+    if strType == "laplacian":
+        tenLaplacian = tenInput.new_zeros(tenInput.shape[1], tenInput.shape[1], 3, 3)
 
-		for intKernel in range(tenInput.shape[1]):
-			tenLaplacian[intKernel, intKernel, 0, 1] = -1.0
-			tenLaplacian[intKernel, intKernel, 0, 2] = -1.0
-			tenLaplacian[intKernel, intKernel, 1, 1] = 4.0
-			tenLaplacian[intKernel, intKernel, 1, 0] = -1.0
-			tenLaplacian[intKernel, intKernel, 2, 0] = -1.0
-		# end
+        for intKernel in range(tenInput.shape[1]):
+            tenLaplacian[intKernel, intKernel, 0, 1] = -1.0
+            tenLaplacian[intKernel, intKernel, 0, 2] = -1.0
+            tenLaplacian[intKernel, intKernel, 1, 1] = 4.0
+            tenLaplacian[intKernel, intKernel, 1, 0] = -1.0
+            tenLaplacian[intKernel, intKernel, 2, 0] = -1.0
+        # end
 
-		tenOutput = torch.nn.functional.pad(input=tenInput, pad=[ 1, 1, 1, 1 ], mode='replicate')
-		tenOutput = torch.nn.functional.conv2d(input=tenOutput, weight=tenLaplacian)
+        tenOutput = torch.nn.functional.pad(
+            input=tenInput, pad=[1, 1, 1, 1], mode="replicate"
+        )
+        tenOutput = torch.nn.functional.conv2d(input=tenOutput, weight=tenLaplacian)
 
-	elif strType == 'median-3':
-		tenOutput = torch.nn.functional.pad(input=tenInput, pad=[ 1, 1, 1, 1 ], mode='reflect')
-		tenOutput = tenOutput.unfold(2, 3, 1).unfold(3, 3, 1)
-		tenOutput = tenOutput.contiguous().view(tenOutput.shape[0], tenOutput.shape[1], tenOutput.shape[2], tenOutput.shape[3], 3 * 3)
-		tenOutput = tenOutput.median(-1, False)[0]
+    elif strType == "median-3":
+        tenOutput = torch.nn.functional.pad(
+            input=tenInput, pad=[1, 1, 1, 1], mode="reflect"
+        )
+        tenOutput = tenOutput.unfold(2, 3, 1).unfold(3, 3, 1)
+        tenOutput = tenOutput.contiguous().view(
+            tenOutput.shape[0],
+            tenOutput.shape[1],
+            tenOutput.shape[2],
+            tenOutput.shape[3],
+            3 * 3,
+        )
+        tenOutput = tenOutput.median(-1, False)[0]
 
-	elif strType == 'median-5':
-		tenOutput = torch.nn.functional.pad(input=tenInput, pad=[ 2, 2, 2, 2 ], mode='reflect')
-		tenOutput = tenOutput.unfold(2, 5, 1).unfold(3, 5, 1)
-		tenOutput = tenOutput.contiguous().view(tenOutput.shape[0], tenOutput.shape[1], tenOutput.shape[2], tenOutput.shape[3], 5 * 5)
-		tenOutput = tenOutput.median(-1, False)[0]
+    elif strType == "median-5":
+        tenOutput = torch.nn.functional.pad(
+            input=tenInput, pad=[2, 2, 2, 2], mode="reflect"
+        )
+        tenOutput = tenOutput.unfold(2, 5, 1).unfold(3, 5, 1)
+        tenOutput = tenOutput.contiguous().view(
+            tenOutput.shape[0],
+            tenOutput.shape[1],
+            tenOutput.shape[2],
+            tenOutput.shape[3],
+            5 * 5,
+        )
+        tenOutput = tenOutput.median(-1, False)[0]
 
-	# end
+    # end
 
-	return tenOutput
+    return tenOutput
+
+
 # end
 
+
 def render_pointcloud(tenInput, tenData, intWidth, intHeight, fltFocal, fltBaseline):
-	tenData = torch.cat([ tenData, tenData.new_ones([ tenData.shape[0], 1, tenData.shape[2] ]) ], 1)
+    tenData = torch.cat(
+        [tenData, tenData.new_ones([tenData.shape[0], 1, tenData.shape[2]])], 1
+    )
 
-	tenZee = tenInput.new_zeros([ tenData.shape[0], 1, intHeight, intWidth ]).fill_(1000000.0)
-	tenOutput = tenInput.new_zeros([ tenData.shape[0], tenData.shape[1], intHeight, intWidth ])
+    tenZee = tenInput.new_zeros([tenData.shape[0], 1, intHeight, intWidth]).fill_(
+        1000000.0
+    )
+    tenOutput = tenInput.new_zeros(
+        [tenData.shape[0], tenData.shape[1], intHeight, intWidth]
+    )
 
-	n = tenInput.shape[0] * tenInput.shape[2]
-	launch_kernel('kernel_pointrender_updateZee', preprocess_kernel('''
+    n = tenInput.shape[0] * tenInput.shape[2]
+    launch_kernel(
+        "kernel_pointrender_updateZee",
+        preprocess_kernel(
+            """
 		extern "C" __global__ void kernel_pointrender_updateZee(
 			const int n,
 			const float* input,
@@ -423,22 +678,28 @@ def render_pointcloud(tenInput, tenData, intWidth, intHeight, fltFocal, fltBasel
 
 			}
 		} }
-	''', {
-		'intWidth': intWidth,
-		'intHeight': intHeight,
-		'fltFocal': fltFocal,
-		'fltBaseline': fltBaseline,
-		'input': tenInput,
-		'data': tenData,
-		'zee': tenZee
-	}))(
-		grid=tuple([ int((n + 512 - 1) / 512), 1, 1 ]),
-		block=tuple([ 512, 1, 1 ]),
-		args=[ n, tenInput.data_ptr(), tenData.data_ptr(), tenZee.data_ptr() ]
-	)
+	""",
+            {
+                "intWidth": intWidth,
+                "intHeight": intHeight,
+                "fltFocal": fltFocal,
+                "fltBaseline": fltBaseline,
+                "input": tenInput,
+                "data": tenData,
+                "zee": tenZee,
+            },
+        ),
+    )(
+        grid=tuple([int((n + 512 - 1) / 512), 1, 1]),
+        block=tuple([512, 1, 1]),
+        args=[n, tenInput.data_ptr(), tenData.data_ptr(), tenZee.data_ptr()],
+    )
 
-	n = tenZee.nelement()
-	launch_kernel('kernel_pointrender_updateDegrid', preprocess_kernel('''
+    n = tenZee.nelement()
+    launch_kernel(
+        "kernel_pointrender_updateDegrid",
+        preprocess_kernel(
+            """
 		extern "C" __global__ void kernel_pointrender_updateDegrid(
 			const int n,
 			const float* input,
@@ -486,22 +747,28 @@ def render_pointcloud(tenInput, tenData, intWidth, intHeight, fltFocal, fltBasel
 				zee[OFFSET_4(zee, intN, intC, intY, intX)] = min(VALUE_4(zee, intN, intC, intY, intX), fltSum / intCount);
 			}
 		} }
-	''', {
-		'intWidth': intWidth,
-		'intHeight': intHeight,
-		'fltFocal': fltFocal,
-		'fltBaseline': fltBaseline,
-		'input': tenInput,
-		'data': tenData,
-		'zee': tenZee
-	}))(
-		grid=tuple([ int((n + 512 - 1) / 512), 1, 1 ]),
-		block=tuple([ 512, 1, 1 ]),
-		args=[ n, tenInput.data_ptr(), tenData.data_ptr(), tenZee.data_ptr() ]
-	)
+	""",
+            {
+                "intWidth": intWidth,
+                "intHeight": intHeight,
+                "fltFocal": fltFocal,
+                "fltBaseline": fltBaseline,
+                "input": tenInput,
+                "data": tenData,
+                "zee": tenZee,
+            },
+        ),
+    )(
+        grid=tuple([int((n + 512 - 1) / 512), 1, 1]),
+        block=tuple([512, 1, 1]),
+        args=[n, tenInput.data_ptr(), tenData.data_ptr(), tenZee.data_ptr()],
+    )
 
-	n = tenInput.shape[0] * tenInput.shape[2]
-	launch_kernel('kernel_pointrender_updateOutput', preprocess_kernel('''
+    n = tenInput.shape[0] * tenInput.shape[2]
+    launch_kernel(
+        "kernel_pointrender_updateOutput",
+        preprocess_kernel(
+            """
 		extern "C" __global__ void kernel_pointrender_updateOutput(
 			const int n,
 			const float* input,
@@ -586,29 +853,47 @@ def render_pointcloud(tenInput, tenData, intWidth, intHeight, fltFocal, fltBasel
 				}
 			}
 		} }
-	''', {
-		'intWidth': intWidth,
-		'intHeight': intHeight,
-		'fltFocal': fltFocal,
-		'fltBaseline': fltBaseline,
-		'input': tenInput,
-		'data': tenData,
-		'zee': tenZee,
-		'output': tenOutput
-	}))(
-		grid=tuple([ int((n + 512 - 1) / 512), 1, 1 ]),
-		block=tuple([ 512, 1, 1 ]),
-		args=[ n, tenInput.data_ptr(), tenData.data_ptr(), tenZee.data_ptr(), tenOutput.data_ptr() ]
-	)
+	""",
+            {
+                "intWidth": intWidth,
+                "intHeight": intHeight,
+                "fltFocal": fltFocal,
+                "fltBaseline": fltBaseline,
+                "input": tenInput,
+                "data": tenData,
+                "zee": tenZee,
+                "output": tenOutput,
+            },
+        ),
+    )(
+        grid=tuple([int((n + 512 - 1) / 512), 1, 1]),
+        block=tuple([512, 1, 1]),
+        args=[
+            n,
+            tenInput.data_ptr(),
+            tenData.data_ptr(),
+            tenZee.data_ptr(),
+            tenOutput.data_ptr(),
+        ],
+    )
 
-	return tenOutput[:, :-1, :, :] / (tenOutput[:, -1:, :, :] + 0.0000001), tenOutput[:, -1:, :, :].detach().clone()
+    return (
+        tenOutput[:, :-1, :, :] / (tenOutput[:, -1:, :, :] + 0.0000001),
+        tenOutput[:, -1:, :, :].detach().clone(),
+    )
+
+
 # end
 
-def fill_disocclusion(tenInput, tenDepth):
-	tenOutput = tenInput.clone()
 
-	n = tenInput.shape[0] * tenInput.shape[2] * tenInput.shape[3]
-	launch_kernel('kernel_discfill_updateOutput', preprocess_kernel('''
+def fill_disocclusion(tenInput, tenDepth):
+    tenOutput = tenInput.clone()
+
+    n = tenInput.shape[0] * tenInput.shape[2] * tenInput.shape[3]
+    launch_kernel(
+        "kernel_discfill_updateOutput",
+        preprocess_kernel(
+            """
 		extern "C" __global__ void kernel_discfill_updateOutput(
 			const int n,
 			const float* input,
@@ -696,15 +981,16 @@ def fill_disocclusion(tenInput, tenDepth):
 				output[OFFSET_4(output, intSample, intDepth, intY, intX)] = VALUE_4(input, intSample, intDepth, intFillY, intFillX);
 			}
 		} }
-	''', {
-		'input': tenInput,
-		'depth': tenDepth,
-		'output': tenOutput
-	}))(
-		grid=tuple([ int((n + 512 - 1) / 512), 1, 1 ]),
-		block=tuple([ 512, 1, 1 ]),
-		args=[ n, tenInput.data_ptr(), tenDepth.data_ptr(), tenOutput.data_ptr() ]
-	)
+	""",
+            {"input": tenInput, "depth": tenDepth, "output": tenOutput},
+        ),
+    )(
+        grid=tuple([int((n + 512 - 1) / 512), 1, 1]),
+        block=tuple([512, 1, 1]),
+        args=[n, tenInput.data_ptr(), tenDepth.data_ptr(), tenOutput.data_ptr()],
+    )
 
-	return tenOutput
+    return tenOutput
+
+
 # end
