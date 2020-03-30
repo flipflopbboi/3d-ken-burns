@@ -73,6 +73,7 @@ objPlayback = {
 }
 
 objFlask = flask.Flask(import_name=__name__, static_url_path='', static_folder=os.path.abspath('./'))
+run_with_ngrok(objFlask)
 
 @objFlask.route(rule='/', methods=[ 'GET' ])
 def index():
@@ -211,6 +212,5 @@ def get_result():
 	return flask.send_file(filename_or_fp=objKenburns, mimetype='video/mp4', as_attachment=True, attachment_filename='kenburns.mp4', cache_timeout=-1)
 # end
 
-run_with_ngrok(objFlask)
 objFlask.run()
 # gevent.pywsgi.WSGIServer(listener=('0.0.0.0', 8081), application=objFlask).serve_forever()
