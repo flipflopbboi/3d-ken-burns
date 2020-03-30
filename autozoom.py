@@ -33,6 +33,7 @@ import urllib
 import zipfile
 
 ##########################################################
+from helpers.numeric import split_int_in_half
 
 assert (
     int(str("").join(torch.__version__.split(".")[0:2])) >= 12
@@ -228,21 +229,18 @@ if __name__ == "__main__":
     print(f"📐 Max width: {max_width}")
 
     #
-    print("Making all images same size ... ", end="")
+    print("🖼 Making all images same size ... ", end="")
     for frame in frames_list:
-        frame_height = frame.shape[0]
-        frame_width = frame.shape[1]
-        top = (max_height - frame_height) / 2
-        bottom = (max_height - frame_height) / 2
-        left = (max_width - frame_width) / 2
-        right = (max_width - frame_width) / 2
+        frame_height, frame_width = frame.shape[0], frame.shape[1]
+        top, bottom = split_int_in_half(value=max_height - frame_height)
+        left, right = split_int_in_half(value=max_width - frame_width)
         frame = cv2.copyMakeBorder(
-            frame,
+            src=frame,
             top=top,
             bottom=bottom,
             left=left,
             right=right,
-            borderType=cv2.BORDER_CONSTANT,
+            borderType=cv2.BORDER_REFLECT,
             value=[0, 0, 0],
         )
     print("DONE ✅")
