@@ -77,6 +77,9 @@ def parse_args():
         "-folder", "--folder", type=str, required=False, help="Input folder"
     )
     parser.add_argument(
+        "-video", "--video", type=str, required=False, help="Input video"
+    )
+    parser.add_argument(
         "-z",
         "--zoom",
         type=float,
@@ -151,21 +154,25 @@ def parse_args():
     return parser.parse_args()
 
 
+def get_images(args) -> List[str]:
+    if not args.folder:
+        image_list = [args.input]
+    else:
+        image_list: List[str] = [
+            str(img) for img in pathlib.Path(args.folder).glob("**/*")
+        ]
+    print(f"Will process {len(image_list)} image(s)")
+    return sorted(image_list)
+
+
 ##########################################################
 
 if __name__ == "__main__":
+
     args = parse_args()
+    img_list: List[str] = get_images(args)
 
     all_frames = []
-
-    if not args.folder:
-        img_list = [args.input]
-    else:
-        img_list: List[str] = [
-            str(img) for img in pathlib.Path(args.folder).glob("**/*")
-        ]
-
-    print(f"Will process {len(img_list)} image(s)")
 
     for input_image in img_list:
         if not os.path.isfile(input_image):
@@ -200,11 +207,15 @@ if __name__ == "__main__":
         }
 
         objTo = process_autozoom(
-            {"fltShift": args.shift, "fltZoom": args.zoom, "objFrom": objFrom}
+            objSettings={
+                "fltShift": args.shift,
+                "fltZoom": args.zoom,
+                "objFrom": objFrom,
+            }
         )
 
         npyResult = process_kenburns(
-            {
+            objSettings={
                 # num defines the number of discrete steps for the inwards transition
                 "fltSteps": numpy.linspace(
                     start=args.start, stop=args.stop, num=int(args.time * FPS)
