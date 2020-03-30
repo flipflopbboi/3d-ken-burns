@@ -136,6 +136,14 @@ def parse_args():
         help="Zoom target pixel height (default is middle)",
     )
     parser.add_argument(
+        "-face_zoom",
+        "--face_zoom",
+        required=False,
+        default=False,
+        action="store_true",
+        help="USe detected faces as travel reference?",
+    )
+    parser.add_argument(
         "-reverse",
         "--reverse",
         required=False,
@@ -186,9 +194,6 @@ if __name__ == "__main__":
         )
 
         process_load(npyImage, {})
-
-        print(intWidth / 2.0)
-        print(intHeight / 2.0)
 
         objFrom = {
             "fltCenterU": args.width if args.width is not None else intWidth / 2.0,
