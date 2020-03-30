@@ -228,13 +228,14 @@ if __name__ == "__main__":
     max_width = max(frame.shape[1] for frame in frames_list)
     print(f"📐 Max width: {max_width}")
 
-    #
+    # Add border to make all images the same size
     print("🖼 Making all images same size ... ", end="")
+    new_frames = []
     for frame in frames_list:
         frame_height, frame_width = frame.shape[0], frame.shape[1]
         top, bottom = split_int_in_half(value=max_height - frame_height)
         left, right = split_int_in_half(value=max_width - frame_width)
-        frame = cv2.copyMakeBorder(
+        new_frame = cv2.copyMakeBorder(
             src=frame,
             top=top,
             bottom=bottom,
@@ -243,10 +244,11 @@ if __name__ == "__main__":
             borderType=cv2.BORDER_REFLECT,
             value=[0, 0, 0],
         )
+        new_frames.append(new_frame)
     print("DONE ✅")
     for frame in frames_list:
         print(frame.shape)
     # Create output video
-    moviepy.editor.ImageSequenceClip(sequence=frames_list, fps=FPS).write_videofile(
+    moviepy.editor.ImageSequenceClip(sequence=new_frames, fps=FPS).write_videofile(
         args.output
     )
