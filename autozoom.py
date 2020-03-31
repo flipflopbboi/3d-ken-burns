@@ -272,6 +272,8 @@ if __name__ == "__main__":
     print("DONE ✅")
 
     # Create output video
-    moviepy.editor.ImageSequenceClip(sequence=bordered_frames, fps=FPS).write_videofile(
-        filename=args.output, audio=args.audio
-    )
+    video = moviepy.editor.ImageSequenceClip(sequence=bordered_frames, fps=FPS)
+    if args.audio:
+        print(f"🔊 Using audio from {args.audio}")
+        video.set_audio(args.audio)
+    video.write_videofile(filename=args.output, audio=args.audio)
