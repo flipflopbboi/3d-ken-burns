@@ -136,6 +136,14 @@ def parse_args():
         help="Zoom target pixel height (default is middle)",
     )
     parser.add_argument(
+        "-audio",
+        "--audio",
+        type=str,
+        required=False,
+        default=None,
+        help="Audio file path",
+    )
+    parser.add_argument(
         "-face_zoom",
         "--face_zoom",
         required=False,
@@ -240,9 +248,9 @@ if __name__ == "__main__":
 
     print(f"🎞 Frames #   : {len(frames_list)}")
     max_height = max(frame.shape[0] for frame in frames_list)
-    print(f"📐 Max height : {max_height}")
+    print(f"📐 Max height : {max_height} pixels")
     max_width = max(frame.shape[1] for frame in frames_list)
-    print(f"📐 Max width  : {max_width}")
+    print(f"📐 Max width  : {max_width:4d} pixels")
 
     # Add border to make all images the same size
     print("🖼 Making all images same size ... ", end="")
@@ -265,5 +273,5 @@ if __name__ == "__main__":
 
     # Create output video
     moviepy.editor.ImageSequenceClip(sequence=bordered_frames, fps=FPS).write_videofile(
-        args.output
+        filename=args.output, audio=args.audio
     )
