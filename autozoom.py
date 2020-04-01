@@ -252,7 +252,7 @@ if __name__ == "__main__":
     print(time_list)
 
     if args.random_zoom:
-        zoom_list: List[float] = [random.uniform(1.05, 2.0) for _ in range(n_images)]
+        zoom_list: List[float] = [random.uniform(1.05, 3.0) for _ in range(n_images)]
     else:
         zoom_list: List[float] = [args.zoom] * n_images
     print("Duration per image:")
