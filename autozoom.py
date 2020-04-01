@@ -178,6 +178,7 @@ def parse_args():
         action="store_true",
         help="Randomise the order of images?",
     )
+
     return parser.parse_args()
 
 
@@ -190,7 +191,8 @@ def get_images(args) -> List[str]:
         ]
     print(f"Will process {len(image_list)} image(s)")
     if args.random_order:
-        return random.shuffle(image_list)
+        random.shuffle(image_list)
+        return image_list
     return sorted(image_list)
 
 
