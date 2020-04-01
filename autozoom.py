@@ -178,6 +178,14 @@ def parse_args():
         action="store_true",
         help="Randomise the order of images?",
     )
+    parser.add_argument(
+        "-random_zoom",
+        "--random_zoom",
+        required=False,
+        default=False,
+        action="store_true",
+        help="Randomise the amount of zoom",
+    )
 
     return parser.parse_args()
 
@@ -223,14 +231,22 @@ if __name__ == "__main__":
     all_frames = []
     args = parse_args()
     img_list: List[str] = get_images(args)
+    n_images: int = len(img_list)
 
     # if using audio, sync time of each frame to the next beat, else use `args.time` throughout.
     if args.audio:
         time_list: List[float] = get_time_list_from_audio_beats(audio_file=args.audio)
     else:
-        time_list: List[float] = [args.time] * len(img_list)
+        time_list: List[float] = [args.time] * n_images
     print("Duration per image:")
     print(time_list)
+
+    if args.random_zoom:
+        zoom_list: List[float] = [random.uniform(1.05, 2.0) for _ in range(n_images)]
+    else:
+        zoom_list: List[float] = [args.zoom] * n_images
+    print("Duration per image:")
+    print(zoom_list)
 
     for image_idx, input_image in enumerate(img_list):
         validate_file(file=input_image)
@@ -264,7 +280,7 @@ if __name__ == "__main__":
         objTo = process_autozoom(
             objSettings={
                 "fltShift": args.shift,
-                "fltZoom": args.zoom,
+                "fltZoom": zoom_list[image_idx],
                 "objFrom": objFrom,
             }
         )
