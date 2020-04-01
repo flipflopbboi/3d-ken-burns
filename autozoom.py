@@ -331,8 +331,8 @@ if __name__ == "__main__":
 
         objTo = process_autozoom(
             objSettings={
-                "fltCenterU": 50,
-                "fltCenterV": 50,
+                "fltCenterU": 0,
+                "fltCenterV": 0,
                 "fltShift": args.shift,
                 "fltZoom": zoom_list[image_idx],
                 "objFrom": objFrom,
