@@ -173,6 +173,7 @@ def parse_args():
     return parser.parse_args()
 
 
+
 def get_images(args) -> List[str]:
     if not args.folder:
         image_list = [args.input]
@@ -213,6 +214,8 @@ if __name__ == "__main__":
         time_list: List[float] = get_time_list_from_audio_beats(audio_file=args.audio)
     else:
         time_list: List[float] = [args.time] * len(img_list)
+    print("Duration per image:")
+    print(time_list)
 
     for image_idx, input_image in enumerate(img_list):
         validate_file(file=input_image)
