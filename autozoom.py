@@ -239,6 +239,7 @@ def get_time_list_from_audio_beats(audio_file: str) -> List[float]:
 
 
 def add_border_to_all_frames(frames: List[np.ndarray]) -> List[np.ndarray]:
+    # FIXME: add DEFAULT_BORDER
     print(f"🎞 Frames #   : {len(frames)}")
     max_height = max(frame.shape[0] for frame in frames)
     print(f"📐 Max height : {max_height} pixels")
