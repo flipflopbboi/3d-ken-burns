@@ -238,6 +238,33 @@ def get_time_list_from_audio_beats(audio_file: str) -> List[float]:
     return time_list.tolist()
 
 
+def add_border_to_all_frames(frames: List[np.ndarray]) -> List[np.ndarray]:
+    print(f"🎞 Frames #   : {len(frames)}")
+    max_height = max(frame.shape[0] for frame in frames)
+    print(f"📐 Max height : {max_height} pixels")
+    max_width = max(frame.shape[1] for frame in frames)
+    print(f"📐 Max width  : {max_width:4d} pixels")
+    # Add border to make all images the same size
+    print("🖼 Making all images same size ... ", end="")
+    bordered_frames = []
+    for frame in frames:
+        frame_height, frame_width = frame.shape[0], frame.shape[1]
+        top, bottom = split_int_in_half(value=max_height - frame_height)
+        left, right = split_int_in_half(value=max_width - frame_width)
+        bordered_frame = cv2.copyMakeBorder(
+            src=frame,
+            top=top,
+            bottom=bottom,
+            left=left,
+            right=right,
+            borderType=cv2.BORDER_REFLECT,
+            value=[0, 0, 0],
+        )
+        bordered_frames.append(bordered_frame)
+    print("DONE ✅")
+    return bordered_frames
+
+
 def get_frame_time_map(fps: int) -> List[float]:
     pass
 
@@ -334,32 +361,9 @@ if __name__ == "__main__":
         all_frames.extend(frame_list)
 
     # Split tensor lists in a list of frames
-    frames_list = [npyFrame[:, :, ::-1] for npyFrame in all_frames]
+    frames_list: List[np.ndarray] = [npyFrame[:, :, ::-1] for npyFrame in all_frames]
 
-    print(f"🎞 Frames #   : {len(frames_list)}")
-    max_height = max(frame.shape[0] for frame in frames_list)
-    print(f"📐 Max height : {max_height} pixels")
-    max_width = max(frame.shape[1] for frame in frames_list)
-    print(f"📐 Max width  : {max_width:4d} pixels")
-
-    # Add border to make all images the same size
-    print("🖼 Making all images same size ... ", end="")
-    bordered_frames = []
-    for frame in frames_list:
-        frame_height, frame_width = frame.shape[0], frame.shape[1]
-        top, bottom = split_int_in_half(value=max_height - frame_height)
-        left, right = split_int_in_half(value=max_width - frame_width)
-        bordered_frame = cv2.copyMakeBorder(
-            src=frame,
-            top=top,
-            bottom=bottom,
-            left=left,
-            right=right,
-            borderType=cv2.BORDER_REFLECT,
-            value=[0, 0, 0],
-        )
-        bordered_frames.append(bordered_frame)
-    print("DONE ✅")
+    bordered_frames = add_border_to_all_frames(frames=frames_list)
 
     # Create output video
     video = moviepy.editor.ImageSequenceClip(sequence=bordered_frames, fps=FPS)
