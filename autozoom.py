@@ -314,7 +314,7 @@ if __name__ == "__main__":
             bottom=bottom,
             left=left,
             right=right,
-            borderType=cv2.BORDER_REPLICATE,
+            borderType=cv2.BORDER_REFLECT,
             value=[0, 0, 0],
         )
         bordered_frames.append(bordered_frame)
