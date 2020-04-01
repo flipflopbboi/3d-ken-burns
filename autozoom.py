@@ -209,11 +209,24 @@ def get_images(args) -> List[str]:
     return sorted(image_list)
 
 
-def validate_file(file: str) -> None:
+def validate_file_list(file_list: List[str]) -> None:
+    for file in file_list:
+        validate_file(file, verbose=False)
+    print("✅ All image files valid")
+
+
+def validate_file(file: str, verbose: bool = True) -> None:
     if not os.path.isfile(file):
         print(f"🔴 Invalid file: {file}")
         exit()
-    print(f"✅ Valid file: {file}")
+    if verbose:
+        print(f"✅ Valid file: {file}")
+
+
+def validate_all_input(img_list: List[str], audio_file: str):
+    validate_file_list(img_list)
+    if audio_file:
+        validate_file(file=audio_file)
 
 
 def get_time_list_from_audio_beats(audio_file: str) -> List[float]:
@@ -227,6 +240,7 @@ def get_time_list_from_audio_beats(audio_file: str) -> List[float]:
 
 def get_frame_time_map(fps: int) -> List[float]:
     pass
+
 
 def move_image(image: np.ndarray, target_coords: Tuple[int, int]):
     pass
@@ -242,6 +256,8 @@ if __name__ == "__main__":
     args = parse_args()
     img_list: List[str] = get_images(args)
     n_images: int = len(img_list)
+
+    validate_all_input(img_list=img_list, audio_file=args.audio)
 
     # if using audio, sync time of each frame to the next beat, else use `args.time` throughout.
     if args.audio:
@@ -259,7 +275,6 @@ if __name__ == "__main__":
     print(zoom_list)
 
     for image_idx, input_image in enumerate(img_list):
-        validate_file(file=input_image)
         npyImage = cv2.imread(filename=input_image, flags=cv2.IMREAD_COLOR)
 
         intWidth = npyImage.shape[1]
