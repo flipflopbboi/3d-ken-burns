@@ -298,8 +298,8 @@ if __name__ == "__main__":
         objFrom = {
             "fltCenterU": args.width if args.width is not None else intWidth / 2.0,
             "fltCenterV": args.height if args.height is not None else intHeight / 2.0,
-            "intCropWidth": int(math.floor(0.5 * intWidth)),
-            "intCropHeight": int(math.floor(0.5 * intHeight)),
+            "intCropWidth": int(math.floor(0.97 * intWidth)),
+            "intCropHeight": int(math.floor(0.97 * intHeight)),
         }
 
         objTo = process_autozoom(
