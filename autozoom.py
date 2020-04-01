@@ -240,7 +240,7 @@ if __name__ == "__main__":
 
     all_frames = []
     args = parse_args()
-    img_list: List[str] = get_images(args)[:100]
+    img_list: List[str] = get_images(args)
     n_images: int = len(img_list)
 
     # if using audio, sync time of each frame to the next beat, else use `args.time` throughout.
