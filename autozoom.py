@@ -1,7 +1,10 @@
 #!/usr/bin/env python
+import librosa
 import argparse
 import pathlib
 from typing import List, Dict
+
+import numpy as np
 
 import torch
 import torchvision
@@ -159,6 +162,14 @@ def parse_args():
         action="store_true",
         help="Include reverse motion?",
     )
+    parser.add_argument(
+        "-step_factor",
+        "--step_factor",
+        required=False,
+        default=False,
+        action="store_true",
+        help="step_factor increases the amount of zoom with each frame",
+    )
     return parser.parse_args()
 
 
@@ -173,20 +184,38 @@ def get_images(args) -> List[str]:
     return sorted(image_list)
 
 
+def validate_file(file: str) -> None:
+    if not os.path.isfile(file):
+        print(f"🔴 Invalid file: {file}")
+        exit()
+    print(f"✅ Valid file: {file}")
+
+
+def get_time_list_from_audio_beats(audio_file: str) -> List[float]:
+    y, sr = librosa.load(audio_file)
+    tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
+    beat_times: np.ndarray = librosa.frames_to_time(beats, sr=sr)
+    time_list = np.diff(beat_times)
+    np.append(time_list, [1])
+    return time_list.tolist()
+
+
 ##########################################################
 
 if __name__ == "__main__":
 
+    all_frames = []
     args = parse_args()
     img_list: List[str] = get_images(args)
 
-    all_frames = []
+    # if using audio, sync time of each frame to the next beat, else use `args.time` throughout.
+    if args.audio:
+        time_list: List[float] = get_time_list_from_audio_beats(audio_file=args.audio)
+    else:
+        time_list: List[float] = [args.time] * len(img_list)
 
-    for input_image in img_list:
-        if not os.path.isfile(input_image):
-            print(f"🔴 Invalid image: {input_image}")
-            exit()
-        print(f"✅ Valid image: {input_image}")
+    for image_idx, input_image in enumerate(img_list):
+        validate_file(file=input_image)
         npyImage = cv2.imread(filename=input_image, flags=cv2.IMREAD_COLOR)
 
         intWidth = npyImage.shape[1]
@@ -226,7 +255,7 @@ if __name__ == "__main__":
             objSettings={
                 # num defines the number of discrete steps for the inwards transition
                 "fltSteps": numpy.linspace(
-                    start=args.start, stop=args.stop, num=int(args.time * FPS)
+                    start=args.start, stop=args.stop, num=int(time_list[image_idx] * FPS)
                 ).tolist(),
                 "objFrom": objFrom,
                 "objTo": objTo,
