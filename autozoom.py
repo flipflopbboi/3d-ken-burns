@@ -2,7 +2,7 @@
 import librosa
 import argparse
 import pathlib
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 import numpy as np
 
@@ -36,6 +36,7 @@ import urllib
 import zipfile
 
 ##########################################################
+from config import FPS
 from helpers.numeric import split_int_in_half
 
 assert (
@@ -60,10 +61,6 @@ exec(open("./models/disparity-estimation.py", "r").read())
 exec(open("./models/disparity-adjustment.py", "r").read())
 exec(open("./models/disparity-refinement.py", "r").read())
 exec(open("./models/pointcloud-inpainting.py", "r").read())
-
-##########################################################
-
-FPS = 25
 
 ##########################################################
 
@@ -186,6 +183,14 @@ def parse_args():
         action="store_true",
         help="Randomise the amount of zoom",
     )
+    parser.add_argument(
+        "-jitter",
+        "--jitter",
+        required=False,
+        default=False,
+        action="store_true",
+        help="Randomise the amount of zoom",
+    )
 
     return parser.parse_args()
 
@@ -223,6 +228,11 @@ def get_time_list_from_audio_beats(audio_file: str) -> List[float]:
 def get_frame_time_map(fps: int) -> List[float]:
     pass
 
+def move_image(image: np.ndarray, target_coords: Tuple[int, int]):
+    pass
+
+
+##########################################################
 
 ##########################################################
 
@@ -230,7 +240,7 @@ if __name__ == "__main__":
 
     all_frames = []
     args = parse_args()
-    img_list: List[str] = get_images(args)
+    img_list: List[str] = get_images(args)[:100]
     n_images: int = len(img_list)
 
     # if using audio, sync time of each frame to the next beat, else use `args.time` throughout.
