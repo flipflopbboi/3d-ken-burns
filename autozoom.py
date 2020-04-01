@@ -170,8 +170,15 @@ def parse_args():
         action="store_true",
         help="step_factor increases the amount of zoom with each frame",
     )
+    parser.add_argument(
+        "-random_order",
+        "--random_order",
+        required=False,
+        default=False,
+        action="store_true",
+        help="Randomise the order of images?",
+    )
     return parser.parse_args()
-
 
 
 def get_images(args) -> List[str]:
@@ -182,6 +189,8 @@ def get_images(args) -> List[str]:
             str(img) for img in pathlib.Path(args.folder).glob("**/*")
         ]
     print(f"Will process {len(image_list)} image(s)")
+    if args.random_order:
+        return random.shuffle(image_list)
     return sorted(image_list)
 
 
@@ -199,6 +208,10 @@ def get_time_list_from_audio_beats(audio_file: str) -> List[float]:
     time_list = np.diff(beat_times)
     np.append(time_list, [1])
     return time_list.tolist()
+
+
+def get_frame_time_map(fps: int) -> List[float]:
+    pass
 
 
 ##########################################################
@@ -258,7 +271,9 @@ if __name__ == "__main__":
             objSettings={
                 # num defines the number of discrete steps for the inwards transition
                 "fltSteps": numpy.linspace(
-                    start=args.start, stop=args.stop, num=int(time_list[image_idx] * FPS)
+                    start=args.start,
+                    stop=args.stop,
+                    num=int(time_list[image_idx] * FPS),
                 ).tolist(),
                 "objFrom": objFrom,
                 "objTo": objTo,
