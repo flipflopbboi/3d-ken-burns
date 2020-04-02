@@ -196,10 +196,10 @@ def parse_args(verbose: bool = True):
     args = parser.parse_args()
 
     if verbose:
-        print_line()
+        print_line(color=Color.WHITE)
         formatted_print("⚙️ Project options", bold=True, color=Color.CYAN)
         pprint.pprint(args)
-        print_line()
+        print_line(color=Color.WHITE)
 
     return args
 

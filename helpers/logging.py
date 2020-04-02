@@ -8,6 +8,7 @@ ColorType = TypeVar("ColorType", bound=str)
 
 
 class Color:
+    WHITE: ColorType = "\033[97m"
     PURPLE: ColorType = "\033[95m"
     CYAN: ColorType = "\033[96m"
     DARKCYAN: ColorType = "\033[36m"
