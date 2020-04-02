@@ -221,8 +221,8 @@ def process_autozoom(objSettings):
         # end
     # end
 
-    print(fltBestU)
-    print(fltBestV)
+    # print(fltBestU)
+    # print(fltBestV)
 
     return {
         "fltCenterU": objSettings["objFrom"]["fltCenterU"] + fltBestU,
