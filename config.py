@@ -6,5 +6,5 @@ DEFAULT_BORDER = 0.05
 
 
 # Define chunks to be processed
-FRAME_CHUNKS_SIZE = 500
+N_IMAGES_PER_CHUNK = 50
 

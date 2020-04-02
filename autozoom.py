@@ -1,8 +1,11 @@
 #!/usr/bin/env python
+import itertools
+from dataclasses import dataclass
+
 import librosa
 import argparse
 import pathlib
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Iterable
 import pprint
 import numpy as np
 
@@ -36,9 +39,14 @@ import urllib
 import zipfile
 
 ##########################################################
-from config import FPS, DEFAULT_BORDER
+from more_itertools import chunked
+from moviepy.video.compositing.concatenate import concatenate_videoclips
+from moviepy.video.io import ImageSequenceClip
+
+from config import FPS, DEFAULT_BORDER, N_IMAGES_PER_CHUNK
 from helpers.logging import print_line, formatted_print, Color, print_success
 from helpers.numeric import split_int_in_half
+from image import ProjectImage
 
 assert (
     int(str("").join(torch.__version__.split(".")[0:2])) >= 12
@@ -219,9 +227,6 @@ def get_images(args) -> List[str]:
             str(img) for img in pathlib.Path(args.folder).glob("**/*")
         ]
     print(f"Will process {len(image_list)} image(s)")
-    if args.random_order:
-        random.shuffle(image_list)
-        return image_list
     return sorted(image_list)
 
 
@@ -239,13 +244,15 @@ def validate_file(file: str, verbose: bool = True) -> None:
         print(f"✅ Valid file: {file}")
 
 
-def validate_all_input(img_list: List[str], audio_file: str):
-    validate_file_list(img_list)
+def validate_all_input(image_paths: List[str], audio_file: str):
+    validate_file_list(image_paths)
     if audio_file:
         validate_file(file=audio_file)
 
 
 def get_time_list_from_audio_beats(audio_file: str) -> List[float]:
+    if audio_file is None:
+        return []
     y, sr = librosa.load(audio_file)
     tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
     beat_times: np.ndarray = librosa.frames_to_time(beats, sr=sr)
@@ -293,36 +300,40 @@ def move_image(image: np.ndarray, target_coords: Tuple[int, int]):
     pass
 
 
-##########################################################
+def build_images(args: argparse.Namespace) -> List[ProjectImage]:
+    """
 
-##########################################################
+    """
+    images = []
+    for image_path in image_paths:
+        images.append(ProjectImage(image_path=image_path))
 
-if __name__ == "__main__":
+    beats_list: List[float] = get_time_list_from_audio_beats(audio_file=args.audio)
 
+    for image_idx, image in enumerate(images):
+        # if using audio, sync time of each frame to the next beat, else use `args.time` throughout.
+        if args.audio:
+            image.time = beats_list[image_idx]
+        else:
+            image.time = args.time
+        # randomise zoom levels
+        if args.random_zoom:
+            image.zoom = random.uniform(-2.0, 3.0)
+        else:
+            image.zoom = args.zoom
+
+    if args.random_order:
+        random.shuffle(images)
+    return images
+
+
+def create_video(images: List[ProjectImage]) -> ImageSequenceClip:
+    """
+
+    """
     all_frames = []
-    args = parse_args()
-    img_list: List[str] = get_images(args)
-    n_images: int = len(img_list)
-
-    validate_all_input(img_list=img_list, audio_file=args.audio)
-
-    # if using audio, sync time of each frame to the next beat, else use `args.time` throughout.
-    if args.audio:
-        time_list: List[float] = get_time_list_from_audio_beats(audio_file=args.audio)
-    else:
-        time_list: List[float] = [args.time] * n_images
-    print("Duration per image:")
-    print(time_list)
-
-    if args.random_zoom:
-        zoom_list: List[float] = [random.uniform(-2.0, 3.0) for _ in range(n_images)]
-    else:
-        zoom_list: List[float] = [args.zoom] * n_images
-    print("Duration per image:")
-    print(zoom_list)
-
-    for image_idx, input_image in enumerate(img_list):
-        npyImage = cv2.imread(filename=input_image, flags=cv2.IMREAD_COLOR)
+    for image in images:
+        npyImage = cv2.imread(filename=image, flags=cv2.IMREAD_COLOR)
 
         intWidth = npyImage.shape[1]
         intHeight = npyImage.shape[0]
@@ -352,7 +363,7 @@ if __name__ == "__main__":
         objTo = process_autozoom(
             objSettings={
                 "fltShift": args.shift,
-                "fltZoom": zoom_list[image_idx],
+                "fltZoom": image.zoom,
                 "objFrom": objFrom,
             }
         )
@@ -361,9 +372,7 @@ if __name__ == "__main__":
             objSettings={
                 # num defines the number of discrete steps for the inwards transition
                 "fltSteps": numpy.linspace(
-                    start=args.start,
-                    stop=args.stop,
-                    num=int(time_list[image_idx] * FPS),
+                    start=args.start, stop=args.stop, num=int(image.time * FPS)
                 ).tolist(),
                 "objFrom": objFrom,
                 "objTo": objTo,
@@ -387,7 +396,26 @@ if __name__ == "__main__":
 
     # Create output video
     video = moviepy.editor.ImageSequenceClip(sequence=bordered_frames, fps=FPS)
+    return video
+
+
+##########################################################
+
+if __name__ == "__main__":
+
+    args = parse_args()
+    image_paths: List[str] = get_images(args)
+    validate_all_input(image_paths=image_paths, audio_file=args.audio)
+
+    images = build_images(args)
+    image_chunks: List[List[ProjectImage]] = list(chunked(images, N_IMAGES_PER_CHUNK))
+
+    videos: List[ImageSequenceClip] = []
+    for image_chunk in image_chunks:
+        videos.append(create_video(images=image_chunk))
+
+    final_video = concatenate_videoclips(videos)
     if args.audio:
         print(f"🔊 Using audio from {args.audio}")
-        video.set_audio(args.audio)
-    video.write_videofile(filename=args.output, audio=args.audio)
+        final_video.set_audio(args.audio)
+    final_video.write_videofile(filename=args.output, audio=args.audio)
