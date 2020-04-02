@@ -41,7 +41,7 @@ import zipfile
 ##########################################################
 from more_itertools import chunked
 from moviepy.video.compositing.concatenate import concatenate_videoclips
-from moviepy.video.io import ImageSequenceClip
+from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 
 from config import FPS, DEFAULT_BORDER, N_IMAGES_PER_CHUNK
 from helpers.logging import print_line, formatted_print, Color, print_success
@@ -226,7 +226,9 @@ def get_images(args) -> List[str]:
         image_list: List[str] = [
             str(img) for img in pathlib.Path(args.folder).glob("**/*")
         ]
-    print(f"Will process {len(image_list)} image(s)")
+    formatted_print(
+        f"👡 Total of {len(image_list)} image(s)", bold=True, color=Color.MAGENTA
+    )
     return sorted(image_list)
 
 
