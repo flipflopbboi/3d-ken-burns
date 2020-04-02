@@ -37,6 +37,7 @@ import zipfile
 
 ##########################################################
 from config import FPS
+from helpers.logging import print_line, formatted_print, Color
 from helpers.numeric import split_int_in_half
 
 assert (
@@ -65,7 +66,7 @@ exec(open("./models/pointcloud-inpainting.py", "r").read())
 ##########################################################
 
 
-def parse_args():
+def parse_args(verbose: bool = True):
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-i", "--input", type=str, required=False, help="Input file path"
@@ -192,11 +193,18 @@ def parse_args():
         help="Randomise the amount of zoom",
     )
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if verbose:
+        print_line()
+        formatted_print("⚙️ Project options", bold=True, color=Color.CYAN)
+        pprint.pprint(args)
+        print_line()
+
+    return args
 
 
 def get_images(args) -> List[str]:
-    pprint.pprint(args)
     if not args.folder:
         image_list = [args.input]
     else:
