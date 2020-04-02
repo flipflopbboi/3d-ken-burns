@@ -296,5 +296,5 @@ def get_result():
 
 # end
 
-objFlask.run()
-# gevent.pywsgi.WSGIServer(listener=('0.0.0.0', 8081), application=objFlask).serve_forever()
+# objFlask.run()
+gevent.pywsgi.WSGIServer(listener=('0.0.0.0', 8081), application=objFlask).serve_forever()
