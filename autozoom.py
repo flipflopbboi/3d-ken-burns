@@ -42,6 +42,7 @@ import zipfile
 from more_itertools import chunked
 from moviepy.video.compositing.concatenate import concatenate_videoclips
 from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
+from tqdm import tqdm
 
 from config import FPS, DEFAULT_BORDER, N_IMAGES_PER_CHUNK
 from helpers.logging import print_line, formatted_print, Color, print_success
@@ -334,7 +335,7 @@ def create_video(images: List[ProjectImage]) -> ImageSequenceClip:
 
     """
     all_frames = []
-    for image in images:
+    for image in tqdm(images, desc="Processing images"):
         npyImage = cv2.imread(filename=image.image_path, flags=cv2.IMREAD_COLOR)
 
         intWidth = npyImage.shape[1]
@@ -413,7 +414,7 @@ if __name__ == "__main__":
     image_chunks: List[List[ProjectImage]] = list(chunked(images, N_IMAGES_PER_CHUNK))
 
     videos: List[ImageSequenceClip] = []
-    for image_chunk in image_chunks:
+    for image_chunk in tqdm(image_chunks, desc="Processing chunks"):
         videos.append(create_video(images=image_chunk))
 
     final_video = concatenate_videoclips(videos)
