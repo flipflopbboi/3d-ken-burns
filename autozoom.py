@@ -3,7 +3,7 @@ import librosa
 import argparse
 import pathlib
 from typing import List, Dict, Tuple
-
+import pprint
 import numpy as np
 
 import torch
@@ -196,6 +196,7 @@ def parse_args():
 
 
 def get_images(args) -> List[str]:
+    pprint.pprint(args)
     if not args.folder:
         image_list = [args.input]
     else:
@@ -247,7 +248,7 @@ def add_border_to_all_frames(frames: List[np.ndarray]) -> List[np.ndarray]:
     print(f"📐 Max width  : {max_width:4d} pixels")
     # Add border to make all images the same size
     print("🖼 Making all images same size ... ", end="")
-    bordered_frames = []
+    new_frames = []
     for frame in frames:
         frame_height, frame_width = frame.shape[0], frame.shape[1]
         top, bottom = split_int_in_half(value=max_height - frame_height)
@@ -261,9 +262,9 @@ def add_border_to_all_frames(frames: List[np.ndarray]) -> List[np.ndarray]:
             borderType=cv2.BORDER_REFLECT,
             value=[0, 0, 0],
         )
-        bordered_frames.append(bordered_frame)
+        new_frames.append(bordered_frame)
     print("DONE ✅")
-    return bordered_frames
+    return new_frames
 
 
 def get_frame_time_map(fps: int) -> List[float]:
@@ -332,8 +333,6 @@ if __name__ == "__main__":
 
         objTo = process_autozoom(
             objSettings={
-                "fltCenterU": -20,
-                "fltCenterV": -30,
                 "fltShift": args.shift,
                 "fltZoom": zoom_list[image_idx],
                 "objFrom": objFrom,
