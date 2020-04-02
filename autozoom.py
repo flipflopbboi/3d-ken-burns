@@ -335,7 +335,7 @@ def create_video(images: List[ProjectImage]) -> ImageSequenceClip:
     """
     all_frames = []
     for image in images:
-        npyImage = cv2.imread(filename=image, flags=cv2.IMREAD_COLOR)
+        npyImage = cv2.imread(filename=image.image_path, flags=cv2.IMREAD_COLOR)
 
         intWidth = npyImage.shape[1]
         intHeight = npyImage.shape[0]
