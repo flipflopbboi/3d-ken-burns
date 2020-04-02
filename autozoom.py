@@ -36,7 +36,7 @@ import urllib
 import zipfile
 
 ##########################################################
-from config import FPS
+from config import FPS, DEFAULT_BORDER
 from helpers.logging import print_line, formatted_print, Color
 from helpers.numeric import split_int_in_half
 
@@ -248,7 +248,6 @@ def get_time_list_from_audio_beats(audio_file: str) -> List[float]:
 
 
 def add_border_to_all_frames(frames: List[np.ndarray]) -> List[np.ndarray]:
-    # FIXME: add DEFAULT_BORDER
     print(f"🎞 Frames #   : {len(frames)}")
     max_height = max(frame.shape[0] for frame in frames)
     print(f"📐 Max height : {max_height} pixels")
@@ -259,8 +258,12 @@ def add_border_to_all_frames(frames: List[np.ndarray]) -> List[np.ndarray]:
     new_frames = []
     for frame in frames:
         frame_height, frame_width = frame.shape[0], frame.shape[1]
-        top, bottom = split_int_in_half(value=max_height - frame_height)
-        left, right = split_int_in_half(value=max_width - frame_width)
+        top, bottom = split_int_in_half(
+            value=max_height * (1 + DEFAULT_BORDER) - frame_height
+        )
+        left, right = split_int_in_half(
+            value=max_width * (1 + DEFAULT_BORDER) - frame_width
+        )
         bordered_frame = cv2.copyMakeBorder(
             src=frame,
             top=top,
