@@ -37,7 +37,7 @@ import zipfile
 
 ##########################################################
 from config import FPS, DEFAULT_BORDER
-from helpers.logging import print_line, formatted_print, Color
+from helpers.logging import print_line, formatted_print, Color, print_success
 from helpers.numeric import split_int_in_half
 
 assert (
@@ -192,6 +192,13 @@ def parse_args(verbose: bool = True):
         action="store_true",
         help="Randomise the amount of zoom",
     )
+    parser.add_argument(
+        "-duration",
+        "--duration",
+        required=False,
+        default=None,
+        help="Duration of the output clip",
+    )
 
     args = parser.parse_args()
 
@@ -259,10 +266,10 @@ def add_border_to_all_frames(frames: List[np.ndarray]) -> List[np.ndarray]:
     for frame in frames:
         frame_height, frame_width = frame.shape[0], frame.shape[1]
         top, bottom = split_int_in_half(
-            value=max_height * (1 + DEFAULT_BORDER) - frame_height
+            value=int(max_height * (1 + DEFAULT_BORDER)) - frame_height
         )
         left, right = split_int_in_half(
-            value=max_width * (1 + DEFAULT_BORDER) - frame_width
+            value=int(max_width * (1 + DEFAULT_BORDER)) - frame_width
         )
         bordered_frame = cv2.copyMakeBorder(
             src=frame,
@@ -274,7 +281,7 @@ def add_border_to_all_frames(frames: List[np.ndarray]) -> List[np.ndarray]:
             value=[0, 0, 0],
         )
         new_frames.append(bordered_frame)
-    print("DONE ✅")
+    print_success()
     return new_frames
 
 
