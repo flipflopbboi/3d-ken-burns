@@ -357,10 +357,10 @@ def create_video(
         )
 
         # Add reversal ratio
-        print(type(npyResult))
-        print(npyResult.shape)
-        print(len(list(npyResult)))
-        image.frames = list(npyResult)
+        # image.frames = list(npyResult)
+        print("len = ", len(npyResult))
+        for result in npyResult:
+            print(result.shape)
 
         if args.reverse:
             frame_list = npyResult + list(reversed(npyResult))[1:]
