@@ -5,6 +5,8 @@ from typing import List
 import cv2
 import numpy as np
 
+from config import FPS
+
 
 @dataclass
 class ProjectImage:
@@ -59,8 +61,19 @@ class ProjectImage:
 
 @dataclass
 class ProjectFrame:
-    idx: int = None
-    image: "ProjectImage" = None
-    time: float = None
+    idx: int
+    image: "ProjectImage"
+    array: np.ndarray
+    time: float
     start: float = None
-    end: float = None
+
+    @property
+    def end(self) -> float:
+        return self.start + self.time
+
+    def set_contrast_and_brightness(
+        self, contrast: float = 1.5, brightness: float = 50
+    ):
+        self.array = cv2.convertScaleAbs(
+            src=self.array, alpha=contrast, beta=brightness
+        )

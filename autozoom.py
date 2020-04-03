@@ -47,7 +47,7 @@ from tqdm import tqdm_notebook as tqdm
 from config import FPS, DEFAULT_BORDER, N_IMAGES_PER_CHUNK
 from helpers.logging import print_line, formatted_print, Color, print_success
 from helpers.numeric import split_int
-from image import ProjectImage
+from image import ProjectImage, ProjectFrame
 from project import Project
 
 assert (
@@ -329,11 +329,12 @@ def create_video(
             }
         )
 
-        npyResult = process_kenburns(
+        n_frames = int(image.time * FPS)
+        npyResult: List[np.ndarray] = process_kenburns(
             objSettings={
                 # num defines the number of discrete steps for the inwards transition
                 "fltSteps": numpy.linspace(
-                    start=image.start, stop=image.stop, num=int(image.time * FPS)
+                    start=image.start, stop=image.stop, num=n_frames
                 ).tolist(),
                 "objFrom": objFrom,
                 "objTo": objTo,
@@ -341,7 +342,16 @@ def create_video(
             }
         )
 
-        image.frames = list(npyResult)
+        for frame_idx, frame in npyResult:
+            image.frames.append(
+                ProjectFrame(
+                    idx=frame_idx,
+                    image=image,
+                    array=frame,
+                    time=1 / FPS,
+                    start=image.start + (1 / FPS),
+                )
+            )
 
         if args.reverse:
             frame_list = npyResult + list(reversed(npyResult))[1:]
@@ -350,6 +360,14 @@ def create_video(
 
         # Append to full list
         all_frames.extend(frame_list)
+
+    # Epic flash
+    for image in images:
+        image.frames[0].set_contrast_and_brightness()
+
+    all_frames: List[np.ndarray] = [
+        frame.array for image in images for frame in image.frames
+    ]
 
     # Split tensor lists in a list of frames
     frames_list: List[np.ndarray] = [npyFrame[:, :, ::-1] for npyFrame in all_frames]
