@@ -46,7 +46,7 @@ from tqdm import tqdm
 
 from config import FPS, DEFAULT_BORDER, N_IMAGES_PER_CHUNK
 from helpers.logging import print_line, formatted_print, Color, print_success
-from helpers.numeric import split_int_in_half
+from helpers.numeric import split_int_in_two
 from image import ProjectImage
 
 assert (
@@ -275,10 +275,10 @@ def add_border_to_all_frames(frames: List[np.ndarray]) -> List[np.ndarray]:
     new_frames = []
     for frame in frames:
         frame_height, frame_width = frame.shape[0], frame.shape[1]
-        top, bottom = split_int_in_half(
+        top, bottom = split_int_in_two(
             value=int(max_height * (1 + DEFAULT_BORDER)) - frame_height
         )
-        left, right = split_int_in_half(
+        left, right = split_int_in_two(
             value=int(max_width * (1 + DEFAULT_BORDER)) - frame_width
         )
         bordered_frame = cv2.copyMakeBorder(
@@ -324,13 +324,16 @@ def build_images(args: argparse.Namespace) -> List[ProjectImage]:
             image.zoom = random.uniform(-2.0, 3.0)
         else:
             image.zoom = args.zoom
+        image.reverse_ratio = 0.2
 
     if args.random_order:
         random.shuffle(images)
     return images
 
 
-def create_video(images: List[ProjectImage]) -> ImageSequenceClip:
+def create_video(
+    args: argparse.Namespace, images: List[ProjectImage]
+) -> ImageSequenceClip:
     """
 
     """
@@ -383,7 +386,10 @@ def create_video(images: List[ProjectImage]) -> ImageSequenceClip:
             }
         )
 
-        # Add reversal
+        # Add reversal ratio
+        breakpoint()
+        image.frames = list(npyResult)
+
         if args.reverse:
             frame_list = npyResult + list(reversed(npyResult))[1:]
         else:
@@ -403,9 +409,7 @@ def create_video(images: List[ProjectImage]) -> ImageSequenceClip:
 
 
 ##########################################################
-
-if __name__ == "__main__":
-
+def run():
     args = parse_args()
     image_paths: List[str] = get_images(args)
     validate_all_input(image_paths=image_paths, audio_file=args.audio)
@@ -415,10 +419,16 @@ if __name__ == "__main__":
 
     videos: List[ImageSequenceClip] = []
     for image_chunk in tqdm(image_chunks, desc="Processing chunks"):
-        videos.append(create_video(images=image_chunk))
+        videos.append(create_video(args=args, images=image_chunk))
 
     final_video = concatenate_videoclips(videos)
     if args.audio:
         print(f"🔊 Using audio from {args.audio}")
         final_video.set_audio(args.audio)
     final_video.write_videofile(filename=args.output, audio=args.audio)
+
+
+##########################################################
+
+if __name__ == "__main__":
+    run()
