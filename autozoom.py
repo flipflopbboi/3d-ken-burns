@@ -44,6 +44,7 @@ from moviepy.video.compositing.concatenate import concatenate_videoclips
 from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 from tqdm import tqdm_notebook as tqdm
 
+from audio import cluster_audio
 from config import FPS, DEFAULT_BORDER, N_IMAGES_PER_CHUNK
 from helpers.logging import print_line, formatted_print, Color, print_success
 from helpers.numeric import split_int
@@ -282,6 +283,7 @@ def build_images(
         images.append(ProjectImage.from_args(image_path=image_path, args=args))
 
     beats_list: List[float] = get_time_list_from_audio_beats(audio_file=args.audio)
+    audio_time_clusters = cluster_audio(audio_file=args.audio)
 
     for image_idx, image in enumerate(images):
         # if using audio, sync time of each frame to the next beat, else use `args.time` throughout.
