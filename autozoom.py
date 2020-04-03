@@ -42,7 +42,7 @@ import zipfile
 from more_itertools import chunked
 from moviepy.video.compositing.concatenate import concatenate_videoclips
 from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
-from tqdm import tqdm
+from tqdm import tqdm_notebook as tqdm
 
 from config import FPS, DEFAULT_BORDER, N_IMAGES_PER_CHUNK
 from helpers.logging import print_line, formatted_print, Color, print_success
