@@ -32,7 +32,7 @@ class ProjectImage:
         """
         self.width = min(int(pixels * self.w_to_h_ratio), pixels)
         self.height = min(int(pixels * self.w_to_h_ratio), pixels)
-
+        self.w_to_h_ratio = self.width / self.height
         self.array = cv2.resize(
             src=self.array,
             dsize=(self.width, self.height),
