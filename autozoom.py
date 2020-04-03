@@ -309,36 +309,23 @@ def create_video(
     """
     all_frames = []
     for image in tqdm(images, desc="Processing images"):
-        npyImage = cv2.imread(filename=image.image_path, flags=cv2.IMREAD_COLOR)
+        image.set_array()
+        image.resize(pixels=1024)
 
-        intWidth = npyImage.shape[1]
-        intHeight = npyImage.shape[0]
-
-        fltRatio = float(intWidth) / float(intHeight)
-
-        intWidth = min(int(1024 * fltRatio), 1024)
-        intHeight = min(int(1024 / fltRatio), 1024)
-
-        npyImage = cv2.resize(
-            src=npyImage,
-            dsize=(intWidth, intHeight),
-            fx=0.0,
-            fy=0.0,
-            interpolation=cv2.INTER_AREA,
-        )
-
-        process_load(npyImage, {})
+        process_load(npyImage=image.array, objSettings={})
 
         objFrom = {
-            "fltCenterU": args.width if args.width is not None else intWidth / 2.0,
-            "fltCenterV": args.height if args.height is not None else intHeight / 2.0,
-            "intCropWidth": int(math.floor(0.97 * intWidth)),
-            "intCropHeight": int(math.floor(0.97 * intHeight)),
+            "fltCenterU": args.width if args.width is not None else image.width / 2.0,
+            "fltCenterV": args.height
+            if args.height is not None
+            else image.height / 2.0,
+            "intCropWidth": int(math.floor(0.97 * image.width)),
+            "intCropHeight": int(math.floor(0.97 * image.height)),
         }
 
         objTo = process_autozoom(
             objSettings={
-                "fltShift": args.shift,
+                "fltShift": image.shift,
                 "fltZoom": image.zoom,
                 "objFrom": objFrom,
             }
@@ -348,7 +335,7 @@ def create_video(
             objSettings={
                 # num defines the number of discrete steps for the inwards transition
                 "fltSteps": numpy.linspace(
-                    start=args.start, stop=args.stop, num=int(image.time * FPS)
+                    start=image.start, stop=image.stop, num=int(image.time * FPS)
                 ).tolist(),
                 "objFrom": objFrom,
                 "objTo": objTo,
