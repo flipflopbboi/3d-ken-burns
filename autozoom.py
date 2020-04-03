@@ -46,7 +46,7 @@ from tqdm import tqdm_notebook as tqdm
 
 from config import FPS, DEFAULT_BORDER, N_IMAGES_PER_CHUNK
 from helpers.logging import print_line, formatted_print, Color, print_success
-from helpers.numeric import split_int_in_two
+from helpers.numeric import split_int
 from image import ProjectImage
 
 assert (
@@ -275,10 +275,10 @@ def add_border_to_all_frames(frames: List[np.ndarray]) -> List[np.ndarray]:
     new_frames = []
     for frame in frames:
         frame_height, frame_width = frame.shape[0], frame.shape[1]
-        top, bottom = split_int_in_two(
+        top, bottom = split_int(
             value=int(max_height * (1 + DEFAULT_BORDER)) - frame_height
         )
-        left, right = split_int_in_two(
+        left, right = split_int(
             value=int(max_width * (1 + DEFAULT_BORDER)) - frame_width
         )
         bordered_frame = cv2.copyMakeBorder(
