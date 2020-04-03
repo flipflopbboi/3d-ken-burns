@@ -1,3 +1,4 @@
+import argparse
 from dataclasses import dataclass, field
 from typing import List
 
@@ -17,7 +18,7 @@ class ProjectImage:
     time: float = None
     start: float = None
     stop: float = None
-    shift: float = 100.
+    shift: float = None
     frames: List["ProjectFrame"] = field(default_factory=list)
 
     def set_array(self) -> None:
@@ -39,6 +40,17 @@ class ProjectImage:
             fx=0.0,
             fy=0.0,
             interpolation=cv2.INTER_AREA,
+        )
+
+    @classmethod
+    def from_args(cls, image_path: str, args: argparse.Namespace) -> "ProjectImage":
+        return ProjectImage(
+            image_path=image_path,
+            zoom=args.zoom,
+            time=args.time,
+            start=args.start,
+            stop=args.stop,
+            shift=args.shift,
         )
 
     def get_face_coords(self):

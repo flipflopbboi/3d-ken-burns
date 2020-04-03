@@ -279,7 +279,7 @@ def build_images(
     """
     images = []
     for image_path in image_paths:
-        images.append(ProjectImage(image_path=image_path))
+        images.append(ProjectImage.from_args(image_path=image_path, args=args))
 
     beats_list: List[float] = get_time_list_from_audio_beats(audio_file=args.audio)
 
