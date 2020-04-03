@@ -17,6 +17,7 @@ class ProjectImage:
     time: float = None
     start: float = None
     stop: float = None
+    shift: float = None
     frames: List["ProjectFrame"] = field(default_factory=list)
 
     def set_array(self) -> None:
