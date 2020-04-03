@@ -15,10 +15,14 @@ class ProjectImage:
     frames: List["ProjectFrame"] = field(default_factory=list)
 
 
+    def get_face_coords(self):
+        pass
+
+
 @dataclass
 class ProjectFrame:
     idx: int = None
-    image: ProjectImage = None
+    image: 'ProjectImage' = None
     time: float = None
     start: float = None
     end: float = None
