@@ -315,10 +315,8 @@ def create_video(
         process_load(npyImage=image.array, objSettings={})
 
         objFrom = {
-            "fltCenterU": args.width if args.width is not None else image.width / 2.0,
-            "fltCenterV": args.height
-            if args.height is not None
-            else image.height / 2.0,
+            "fltCenterU": image.width / 2.0,
+            "fltCenterV": image.height / 2.0,
             "intCropWidth": int(math.floor(0.97 * image.width)),
             "intCropHeight": int(math.floor(0.97 * image.height)),
         }
