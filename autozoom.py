@@ -48,6 +48,7 @@ from config import FPS, DEFAULT_BORDER, N_IMAGES_PER_CHUNK
 from helpers.logging import print_line, formatted_print, Color, print_success
 from helpers.numeric import split_int
 from image import ProjectImage
+from project import Project
 
 assert (
     int(str("").join(torch.__version__.split(".")[0:2])) >= 12
@@ -220,39 +221,6 @@ def parse_args(verbose: bool = True):
     return args
 
 
-def get_images(args) -> List[str]:
-    if not args.folder:
-        image_list = [args.input]
-    else:
-        image_list: List[str] = [
-            str(img) for img in pathlib.Path(args.folder).glob("**/*")
-        ]
-    formatted_print(
-        f"👡 Total of {len(image_list)} image(s)", bold=True, color=Color.MAGENTA
-    )
-    return sorted(image_list)
-
-
-def validate_file_list(file_list: List[str]) -> None:
-    for file in file_list:
-        validate_file(file, verbose=False)
-    print("✅ All image files valid")
-
-
-def validate_file(file: str, verbose: bool = True) -> None:
-    if not os.path.isfile(file):
-        print(f"🔴 Invalid file: {file}")
-        exit()
-    if verbose:
-        print(f"✅ Valid file: {file}")
-
-
-def validate_all_input(image_paths: List[str], audio_file: str):
-    validate_file_list(image_paths)
-    if audio_file:
-        validate_file(file=audio_file)
-
-
 def get_time_list_from_audio_beats(audio_file: str) -> List[float]:
     if audio_file is None:
         return []
@@ -303,7 +271,9 @@ def move_image(image: np.ndarray, target_coords: Tuple[int, int]):
     pass
 
 
-def build_images(args: argparse.Namespace) -> List[ProjectImage]:
+def build_images(
+    args: argparse.Namespace, image_paths: List[str]
+) -> List[ProjectImage]:
     """
 
     """
@@ -410,22 +380,20 @@ def create_video(
 
 ##########################################################
 def run():
-    args = parse_args()
-    image_paths: List[str] = get_images(args)
-    validate_all_input(image_paths=image_paths, audio_file=args.audio)
+    project = Project(args=parse_args())
 
-    images = build_images(args)
+    images = build_images(project.args, image_paths=project.image_paths)
     image_chunks: List[List[ProjectImage]] = list(chunked(images, N_IMAGES_PER_CHUNK))
 
     videos: List[ImageSequenceClip] = []
     for image_chunk in tqdm(image_chunks, desc="Processing chunks"):
-        videos.append(create_video(args=args, images=image_chunk))
+        videos.append(create_video(args=project.args, images=image_chunk))
 
     final_video = concatenate_videoclips(videos)
-    if args.audio:
-        print(f"🔊 Using audio from {args.audio}")
-        final_video.set_audio(args.audio)
-    final_video.write_videofile(filename=args.output, audio=args.audio)
+    if project.args.audio:
+        print(f"🔊 Using audio from {project.args.audio}")
+        final_video.set_audio(project.args.audio)
+    final_video.write_videofile(filename=project.args.output, audio=project.args.audio)
 
 
 ##########################################################
