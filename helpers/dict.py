@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Callable, Iterable, List, MutableMapping, Type, TypeVar
+from typing import Callable, Iterable, List, MutableMapping, Type, TypeVar, Dict
 
 S = TypeVar("S")
 T = TypeVar("T")
@@ -12,7 +12,7 @@ def list_to_dict_list(
     key_func: Callable[[T], S],
     item_func: Callable[[T], U] = lambda obj: obj,
     dict_type: Type[MutableMapping] = OrderedDict,
-) -> MutableMapping[S, List[U]]:
+) -> Dict[S, List[U]]:
     """
     Returns a dictionary of lists based on the given list
 

@@ -222,15 +222,7 @@ def parse_args(verbose: bool = True):
     return args
 
 
-def get_time_list_from_audio_beats(audio_file: str) -> List[float]:
-    if audio_file is None:
-        return []
-    y, sr = librosa.load(audio_file)
-    tempo, beats = librosa.beat.beat_track(y=y, sr=sr)
-    beat_times: np.ndarray = librosa.frames_to_time(beats, sr=sr)
-    time_list = np.diff(beat_times)
-    np.append(time_list, [1])
-    return time_list.tolist()
+
 
 
 def add_border_to_all_frames(frames: List[np.ndarray]) -> List[np.ndarray]:

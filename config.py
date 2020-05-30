@@ -8,3 +8,6 @@ DEFAULT_BORDER = 0.0
 # Define chunks to be processed
 N_IMAGES_PER_CHUNK = 50
 
+
+
+N_AUDIO_CLUSTERS = 5
